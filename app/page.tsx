@@ -393,7 +393,12 @@ export default function Home() {
                       body: JSON.stringify({ userId: user.uid, email: user.email })
                     });
                     const data = await res.json();
-                    if (data.url) window.location.href = data.url;
+                    console.log('Checkout response:', data);
+                    if (data.url) {
+                      window.location.href = data.url;
+                    } else if (data.error) {
+                      alert('Erro: ' + data.error);
+                    }
                   } catch (e) {
                     console.error(e);
                     alert('Erro ao iniciar checkout.');
