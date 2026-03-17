@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "level": { "type": "string", "enum": ["Iniciante", "Básico", "Intermediário", "Avançado", "untested"] },
+        "xp": { "type": "number" },
+        "currentModule": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "active": { "type": "boolean" }
+      },
+      "required": ["uid", "email", "level", "xp", "role"]
+    },
+    "AudioLesson": {
+      "title": "AudioLesson",
+      "description": "An audio lesson uploaded by admin",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "text": { "type": "string" },
+        "audioData": { "type": "string" },
+        "level": { "type": "string", "enum": ["beginner", "intermediate", "advanced"] },
+        "module": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "text", "audioData", "level", "module", "createdAt"]
+    },
+    "VideoClip": {
+      "title": "VideoClip",
+      "description": "A YouTube video clip for AI context",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "clipUrl": { "type": "string" },
+        "sourceUrl": { "type": "string" },
+        "contextText": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["title", "clipUrl", "sourceUrl", "contextText", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A message in a chat session",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model", "system"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["role", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/audios/{audioId}": {
+      "schema": { "$ref": "#/entities/AudioLesson" },
+      "description": "Audio lessons"
+    },
+    "/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/VideoClip" },
+      "description": "YouTube video clips for AI context"
+    },
+    "/users/{userId}/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Chat history for a user"
+    }
+  }
+}

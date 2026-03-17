@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //   - level: string (required, 'beginner', 'intermediate', 'advanced', 'untested')
+    //   - xp: number (required)
+    //   - currentModule: string (optional)
+    //   - role: string (required, 'user', 'admin')
+    //
+    // Collection: audios
+    // Document ID: {audioId}
+    // Fields:
+    //   - title: string (required)
+    //   - text: string (required)
+    //   - audioData: string (required)
+    //   - level: string (required, 'beginner', 'intermediate', 'advanced')
+    //   - createdAt: string (required)
+    //
+    // Collection: videos
+    // Document ID: {videoId}
+    // Fields:
+    //   - title: string (required)
+    //   - clipUrl: string (required)
+    //   - sourceUrl: string (required)
+    //   - contextText: string (required)
+    //   - createdAt: number (required)
+    //
+    // Collection: users/{userId}/chats
+    // Document ID: {chatId}
+    // Fields:
+    //   - role: string (required, 'user', 'model', 'system')
+    //   - content: string (required)
+    //   - timestamp: number (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.token.email == "professorajato@gmail.com" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'level', 'xp', 'role']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.email is string && data.email.size() > 0 &&
+             data.level in ['Iniciante', 'Básico', 'Intermediário', 'Avançado', 'untested'] &&
+             data.xp is number && data.xp >= 0 &&
+             data.role in ['user', 'admin'] &&
+             (!('active' in data) || data.active is bool) &&
+             (!('plan' in data) || data.plan in ['free', 'premium']) &&
+             (!('interactionsToday' in data) || data.interactionsToday is number) &&
+             (!('lastInteractionDate' in data) || data.lastInteractionDate is string) &&
+             (!('stripeCustomerId' in data) || data.stripeCustomerId is string) &&
+             (!('stripeSubscriptionId' in data) || data.stripeSubscriptionId is string);
+    }
+
+    function isValidAudioLesson(data) {
+      return data.keys().hasAll(['title', 'text', 'audioData', 'level', 'module', 'createdAt']) &&
+             data.title is string && data.text is string && data.audioData is string &&
+             data.level in ['Iniciante', 'Básico', 'Intermediário', 'Avançado'] &&
+             data.module is string && data.createdAt is string;
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['role', 'content', 'timestamp']) &&
+             data.role in ['user', 'model', 'system'] &&
+             data.content is string && data.timestamp is number;
+    }
+
+    function isValidVideoClip(data) {
+      return data.keys().hasAll(['title', 'clipUrl', 'sourceUrl', 'contextText', 'createdAt']) &&
+             data.title is string && data.clipUrl is string &&
+             data.sourceUrl is string && data.contextText is string &&
+             data.createdAt is number;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && 
+                    (request.resource.data.role == 'user' || request.auth.token.email == "professorajato@gmail.com");
+      allow update: if isAuthenticated() && isValidUser(request.resource.data) && 
+                    (
+                      (isOwner(userId) && 
+                       request.resource.data.role == resource.data.role && 
+                       (!('active' in request.resource.data) || request.resource.data.active == resource.data.get('active', true)) &&
+                       (!('plan' in request.resource.data) || request.resource.data.plan == resource.data.get('plan', 'free')) &&
+                       (!('stripeCustomerId' in request.resource.data) || request.resource.data.stripeCustomerId == resource.data.get('stripeCustomerId', '')) &&
+                       (!('stripeSubscriptionId' in request.resource.data) || request.resource.data.stripeSubscriptionId == resource.data.get('stripeSubscriptionId', ''))
+                      ) || 
+                      isAdmin()
+                    );
+      allow delete: if isAdmin();
+      
+      match /chats/{chatId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+    
+    match /audios/{audioId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidAudioLesson(request.resource.data);
+      allow update: if isAdmin() && isValidAudioLesson(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /videos/{videoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidVideoClip(request.resource.data);
+      allow update: if isAdmin() && isValidVideoClip(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}

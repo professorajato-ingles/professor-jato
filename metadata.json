@@ -1,0 +1,5 @@
+{
+  "name": "Professor Ajato",
+  "description": "Plataforma de ensino de inglês acelerado.",
+  "requestFramePermissions": ["camera", "microphone", "geolocation"]
+}
