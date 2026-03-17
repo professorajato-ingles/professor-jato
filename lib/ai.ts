@@ -1,6 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
 
-export const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+export function getAI(): GoogleGenAI {
+  if (!aiInstance) {
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not set');
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export const SYSTEM_PROMPT = `Você é o "Professor Jato", um tutor de inglês virtual extremamente paciente, encorajador e entusiasmado. Sua missão é ajudar alunos a aprender inglês usando o conteúdo do guia fornecido.
 

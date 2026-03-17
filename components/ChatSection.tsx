@@ -6,7 +6,7 @@ import { useAuth } from './AuthProvider';
 import { collection, query, orderBy, onSnapshot, addDoc, getDocs, where, doc, updateDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '@/lib/firestore-errors';
 import { db } from '@/lib/firebase';
-import { ai, SYSTEM_PROMPT } from '@/lib/ai';
+import { getAI, SYSTEM_PROMPT } from '@/lib/ai';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 
@@ -325,7 +325,7 @@ export const ChatSection = () => {
         });
       }
 
-      const response = await ai.models.generateContent({
+      const response = await getAI().models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: contents,
         config: {
