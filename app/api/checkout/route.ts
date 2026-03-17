@@ -25,9 +25,13 @@ export async function POST(req: Request) {
     const stripe = getStripe();
 
     const priceId = process.env.STRIPE_PRICE_ID;
+    const appUrl = process.env.APP_URL;
+
+    console.log('Checkout - priceId:', priceId);
+    console.log('Checkout - appUrl:', appUrl);
 
     if (!priceId) {
-       return NextResponse.json({ error: 'Payment configuration error' }, { status: 500 });
+       return NextResponse.json({ error: 'STRIPE_PRICE_ID not configured' }, { status: 500 });
     }
     
     const session = await stripe.checkout.sessions.create({
@@ -40,14 +44,14 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.APP_URL}/?success=true`,
-      cancel_url: `${process.env.APP_URL}/?canceled=true`,
+      success_url: `${appUrl}/?success=true`,
+      cancel_url: `${appUrl}/?canceled=true`,
       client_reference_id: userId,
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Stripe checkout error:', error);
-    return NextResponse.json({ error: 'Payment processing error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Payment processing error' }, { status: 500 });
   }
 }
