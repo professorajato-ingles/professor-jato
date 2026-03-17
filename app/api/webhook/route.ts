@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getStripe } from '../checkout/route';
+import { getStripe } from '@/lib/stripe';
 
 const PROJECT_ID = 'gen-lang-client-0176295507';
 const FIRESTORE_DB_ID = 'ai-studio-69db3601-50a6-4446-a47f-06da05b2bf10';
