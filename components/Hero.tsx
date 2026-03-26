@@ -46,7 +46,7 @@ export const Hero = ({ onStartAssessment }: { onStartAssessment: () => void }) =
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 text-sm text-slate-500 font-medium">
               <div className="flex items-center gap-2">
                 <CircleCheck className="w-4 h-4 text-emerald-500" />
-                Acesso vitalício
+                Acesso 24h por dia
               </div>
               <div className="flex items-center gap-2">
                 <CircleCheck className="w-4 h-4 text-emerald-500" />

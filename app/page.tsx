@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
@@ -11,12 +11,17 @@ import { ChatSection } from '@/components/ChatSection';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/components/AuthProvider';
 import { motion } from 'motion/react';
-import { BookOpen, CircleCheck, Star, Play, ChevronRight, Briefcase, Globe, Heart, GraduationCap, Type, Zap, CircleHelp, Mic, Link as LinkIcon, X, MessageCircle, Target, BarChart3, Bot } from 'lucide-react';
+import { BookOpen, CircleCheck, Star, Play, ChevronRight, Briefcase, Globe, Heart, GraduationCap, Type, Zap, CircleHelp, Mic, Link as LinkIcon, X, MessageCircle, Target, BarChart3, Bot, Instagram, Youtube, Linkedin } from 'lucide-react';
 
-const LessonCard = ({ title, level, duration, description, icon: Icon, isRecommended }: any) => (
+const LessonCard = ({ title, level, duration, description, icon: Icon, isRecommended, sessionId }: any) => (
   <motion.div 
     whileHover={{ y: -5 }}
-    onClick={() => document.getElementById('chat')?.scrollIntoView({ behavior: 'smooth' })}
+    onClick={() => {
+      if (sessionId) {
+        localStorage.setItem('selectedSession', sessionId);
+      }
+      document.getElementById('chat')?.scrollIntoView({ behavior: 'smooth' });
+    }}
     className={`p-6 rounded-3xl border shadow-sm hover:shadow-xl transition-all group cursor-pointer relative ${
       isRecommended ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-100'
     }`}
@@ -47,9 +52,17 @@ const LessonCard = ({ title, level, duration, description, icon: Icon, isRecomme
 );
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
   const [showAssessment, setShowAssessment] = useState(false);
   const [userLevel, setUserLevel] = useState<string | null>(null);
+
+  const handleStartPlacement = () => {
+    localStorage.setItem('selectedSession', 'nivelamento');
+    const chatElement = document.getElementById('chat');
+    if (chatElement) {
+      chatElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const handleAssessmentComplete = (level: string, reason: string) => {
     setUserLevel(level);
@@ -63,7 +76,7 @@ export default function Home() {
     <main id="top" className="min-h-screen bg-white">
       <Preloader />
       <Navbar />
-      <Hero onStartAssessment={() => setShowAssessment(true)} />
+      <Hero onStartAssessment={handleStartPlacement} />
 
       {showAssessment && (
         <PlacementTest 
@@ -113,6 +126,7 @@ export default function Home() {
               description="Verbo To Be, cumprimentos, pronomes, números e vocabulário de sobrevivência."
               icon={Play}
               isRecommended={userLevel === 'Iniciante'}
+              sessionId="modulo_1"
             />
             <LessonCard 
               title="Módulo 2: Rotina e Ações" 
@@ -121,6 +135,7 @@ export default function Home() {
               description="Present Simple, verbos de ação mais comuns, descrevendo o dia a dia e horas."
               icon={Zap}
               isRecommended={userLevel === 'Iniciante'}
+              sessionId="modulo_2"
             />
             <LessonCard 
               title="Módulo 3: Descrevendo o Mundo" 
@@ -129,6 +144,7 @@ export default function Home() {
               description="Adjetivos, preposições de lugar e tempo, vocabulário de casa, família e cidade."
               icon={Globe}
               isRecommended={userLevel === 'Iniciante'}
+              sessionId="modulo_3"
             />
             <LessonCard 
               title="Módulo 4: Passado e Histórias" 
@@ -137,6 +153,7 @@ export default function Home() {
               description="Past Simple, verbos regulares e irregulares, como contar o que aconteceu ontem."
               icon={BookOpen}
               isRecommended={userLevel === 'Básico'}
+              sessionId="modulo_4"
             />
             <LessonCard 
               title="Módulo 5: Planos e Futuro" 
@@ -145,6 +162,7 @@ export default function Home() {
               description="Will, Going to, fazendo previsões e planejando viagens."
               icon={CircleHelp}
               isRecommended={userLevel === 'Básico'}
+              sessionId="modulo_5"
             />
             <LessonCard 
               title="Módulo 6: Perguntas Poderosas" 
@@ -153,6 +171,7 @@ export default function Home() {
               description="Como formular perguntas complexas (Wh- questions), diálogos práticos."
               icon={Type}
               isRecommended={userLevel === 'Básico'}
+              sessionId="modulo_6"
             />
             <LessonCard 
               title="Módulo 7: Experiências de Vida" 
@@ -161,6 +180,7 @@ export default function Home() {
               description="Present Perfect (o grande divisor de águas), comparando passado com o presente."
               icon={LinkIcon}
               isRecommended={userLevel === 'Intermediário'}
+              sessionId="modulo_7"
             />
             <LessonCard 
               title="Módulo 8: Conectivos e Frases" 
@@ -169,6 +189,7 @@ export default function Home() {
               description="Juntando ideias, argumentação básica, expressando opiniões e concordância."
               icon={LinkIcon}
               isRecommended={userLevel === 'Intermediário'}
+              sessionId="modulo_8"
             />
             <LessonCard 
               title="Módulo 9: Situações Reais" 
@@ -177,6 +198,7 @@ export default function Home() {
               description="Viagens, imigração, emergências, resolução de problemas e conversas telefônicas."
               icon={Globe}
               isRecommended={userLevel === 'Intermediário'}
+              sessionId="modulo_9"
             />
             <LessonCard 
               title="Módulo 10: Phrasal Verbs" 
@@ -185,6 +207,7 @@ export default function Home() {
               description="O inglês falado na rua, gírias e vocabulário nativo."
               icon={Zap}
               isRecommended={userLevel === 'Avançado'}
+              sessionId="modulo_10"
             />
             <LessonCard 
               title="Módulo 11: Inglês Profissional" 
@@ -193,14 +216,16 @@ export default function Home() {
               description="Entrevistas de emprego, reuniões, e-mails corporativos e argumentação avançada."
               icon={BookOpen}
               isRecommended={userLevel === 'Avançado'}
+              sessionId="modulo_11"
             />
             <LessonCard 
               title="Módulo 12: Pronúncia Perfeita" 
               level="Avançado" 
               duration="5h" 
               description="Connected speech, ritmo, entonação e compreensão de nativos falando rápido."
-              icon={Mic}
+              icon={GraduationCap}
               isRecommended={userLevel === 'Avançado'}
+              sessionId="modulo_12"
             />
           </div>
         </div>
@@ -313,7 +338,9 @@ export default function Home() {
       </section>
 
       <ErrorBoundary>
-        <ChatSection />
+        <Suspense fallback={<div className="p-8 text-center text-slate-400">Carregando...</div>}>
+          <ChatSection />
+        </Suspense>
       </ErrorBoundary>
 
       {/* Pricing Section */}
@@ -380,34 +407,43 @@ export default function Home() {
                   <span>Suporte prioritário</span>
                 </li>
               </ul>
-              <button 
-                onClick={async () => {
-                  if (!user) {
-                    alert('Faça login primeiro para assinar o plano Premium.');
-                    return;
-                  }
-                  try {
-                    const res = await fetch('/api/checkout', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId: user.uid, email: user.email })
-                    });
-                    const data = await res.json();
-                    console.log('Checkout response:', data);
-                    if (data.url) {
-                      window.location.href = data.url;
-                    } else if (data.error) {
-                      alert('Erro: ' + data.error);
+              {userData?.plan !== 'premium' ? (
+                <button 
+                  onClick={async () => {
+                    if (!user) {
+                      alert('Faça login primeiro para assinar o plano Premium.');
+                      return;
                     }
-                  } catch (e) {
-                    console.error(e);
-                    alert('Erro ao iniciar checkout.');
-                  }
-                }}
-                className="w-full py-3 px-6 rounded-xl font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 transition-colors shadow-[0_0_20px_rgba(52,211,153,0.3)]"
-              >
-                Assinar Premium
-              </button>
+                    try {
+                      const res = await fetch('/api/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.uid, email: user.email })
+                      });
+                      const data = await res.json();
+                      console.log('Checkout response:', data);
+                      if (data.url) {
+                        window.location.href = data.url;
+                      } else if (data.error) {
+                        alert('Erro: ' + data.error);
+                      }
+                    } catch (e) {
+                      console.error(e);
+                      alert('Erro ao iniciar checkout.');
+                    }
+                  }}
+                  className="w-full py-3 px-6 rounded-xl font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 transition-colors shadow-[0_0_20px_rgba(52,211,153,0.3)]"
+                >
+                  Assinar Premium
+                </button>
+              ) : (
+                <button 
+                  disabled
+                  className="w-full py-3 px-6 rounded-xl font-bold text-white/70 bg-emerald-400/50 cursor-not-allowed"
+                >
+                  EU JÁ SOU PREMIUM
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -444,18 +480,18 @@ export default function Home() {
             <div>
               <h4 className="font-bold mb-6">Legal</h4>
               <ul className="space-y-4 text-slate-400 text-sm">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Privacidade</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">Termos de Uso</a></li>
+                <li><Link href="/privacidade" className="hover:text-emerald-400 transition-colors">Privacidade</Link></li>
+                <li><Link href="/termos" className="hover:text-emerald-400 transition-colors">Termos de Uso</Link></li>
                 <li><a href="#" className="hover:text-emerald-400 transition-colors">Cookies</a></li>
               </ul>
             </div>
           </div>
-          <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-xs">
+            <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-500 text-xs">
             <p>© 2026 Professor Jato. Todos os direitos reservados.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-white transition-colors">Instagram</a>
-              <a href="#" className="hover:text-white transition-colors">YouTube</a>
-              <a href="#" className="hover:text-white transition-colors">LinkedIn</a>
+              <a href="#" className="hover:text-white transition-colors"><Instagram className="w-5 h-5" /></a>
+              <a href="#" className="hover:text-white transition-colors"><Youtube className="w-5 h-5" /></a>
+              <a href="#" className="hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>
             </div>
           </div>
         </div>

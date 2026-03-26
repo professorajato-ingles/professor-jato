@@ -19,6 +19,7 @@ export const Navbar = () => {
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">
               Professor <span className="text-emerald-500">Jato</span>
+              <span className="ml-2 text-[10px] font-bold px-2 py-0.5 bg-amber-400 text-amber-900 rounded-full uppercase">Beta</span>
             </span>
           </Link>
           <div className="hidden md:flex items-center gap-8">

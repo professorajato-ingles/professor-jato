@@ -8,9 +8,7 @@ export function getStripe(): Stripe {
     if (!key) {
       throw new Error('STRIPE_SECRET_KEY environment variable is required');
     }
-    stripeClient = new Stripe(key, {
-      apiVersion: '2026-02-25.clover',
-    });
+    stripeClient = new Stripe(key);
   }
   return stripeClient;
 }

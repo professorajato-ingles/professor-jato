@@ -3,15 +3,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Bot, User, Mic } from 'lucide-react';
 import { useAuth } from './AuthProvider';
-import { collection, query, orderBy, onSnapshot, addDoc, getDocs, where, doc, updateDoc } from 'firebase/firestore';
-import { handleFirestoreError, OperationType } from '@/lib/firestore-errors';
-import { db } from '@/lib/firebase';
-import { getAI, SYSTEM_PROMPT } from '@/lib/ai';
+import { SYSTEM_PROMPT } from '@/lib/ai';
 import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-
-import { AudioPlayer } from './AudioPlayer';
-import { VideoPlayer } from './VideoPlayer';
+import remarkGfm from 'remark-gfm';
 import { Modal } from './Modal';
 
 interface Message {
@@ -19,18 +14,6 @@ interface Message {
   text: string;
   sender: 'ai' | 'user';
   timestamp: number;
-}
-
-interface AudioInfo {
-  id: string;
-  title: string;
-  text: string;
-}
-
-interface VideoInfo {
-  id: string;
-  title: string;
-  contextText: string;
 }
 
 const parseMessage = (text: string) => {
@@ -56,127 +39,141 @@ const parseMessage = (text: string) => {
   };
 };
 
-const renderContentWithMedia = (content: string) => {
-  // Split by both [AUDIO:id] and [VIDEO:id]
-  const parts = content.split(/(\[AUDIO:[a-zA-Z0-9_-]+\]|\[VIDEO:[a-zA-Z0-9_-]+\])/g);
-  return parts.map((part, index) => {
-    if (part.startsWith('[AUDIO:') && part.endsWith(']')) {
-      const audioId = part.replace('[AUDIO:', '').replace(']', '');
-      return <AudioPlayer key={index} audioId={audioId} />;
-    }
-    if (part.startsWith('[VIDEO:') && part.endsWith(']')) {
-      const videoId = part.replace('[VIDEO:', '').replace(']', '');
-      return <VideoPlayer key={index} videoId={videoId} />;
-    }
-    return (
-      <div key={index} className="markdown-body">
-        <Markdown rehypePlugins={[rehypeRaw]}>{part}</Markdown>
-      </div>
-    );
-  });
-};
-
 export const ChatSection = () => {
   const { user, userData, signInWithGoogle } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [moduleAudios, setModuleAudios] = useState<AudioInfo[]>([]);
-  const [moduleVideos, setModuleVideos] = useState<VideoInfo[]>([]);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [practiceMode, setPracticeMode] = useState(false);
+  const [currentSession, setCurrentSession] = useState<string>('nivelamento');
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
-  useEffect(() => {
-    if (!user || userData?.plan !== 'premium') {
-      setModuleAudios([]);
-      setModuleVideos([]);
-      return;
-    }
+  const SESSION_MESSAGES: Record<string, (name: string) => string> = {
+    nivelamento: (name) => `Olá, ${name}! Vamos descobrir qual é o seu nível atual de inglês? Para isso, vou fazer algumas perguntasprogressivas. Não se preocupe, é só um teste inicial para entender melhor onde você está. Vamos começar?
 
-    const qAudios = query(collection(db, 'audios'));
-    const unsubscribeAudios = onSnapshot(qAudios, (snapshot) => {
-      const audios: AudioInfo[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        audios.push({
-          id: doc.id,
-          text: data.text,
-          title: data.title
-        });
-      });
-      setModuleAudios(audios);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'audios');
-    });
+[OPÇÃO] Estou pronto(a)!`,
+    modulo_1: (name) => `Olá, ${name}! Vamos começar o **Módulo 1: Primeiros Passos**! Este módulo vai te ensinar o básico do inglês: o verbo To Be, cumprimentos, pronomes, números e vocabulário de sobrevivência.
 
-    const qVideos = query(collection(db, 'videos'));
-    const unsubscribeVideos = onSnapshot(qVideos, (snapshot) => {
-      const videos: VideoInfo[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        videos.push({
-          id: doc.id,
-          contextText: data.contextText,
-          title: data.title
-        });
-      });
-      setModuleVideos(videos);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'videos');
-    });
+[OPÇÃO] Vamos começar!`,
+    modulo_2: (name) => `Olá, ${name}! Vamos para o **Módulo 2: Rotina e Ações**! Aqui você vai aprender o Present Simple, verbos de ação mais comuns e como descrever o seu dia a dia em inglês.
 
-    return () => {
-      unsubscribeAudios();
-      unsubscribeVideos();
+[OPÇÃO] Vamos começar!`,
+    modulo_3: (name) => `Olá, ${name}! Vamos para o **Módulo 3: Descrevendo o Mundo**! Neste módulo você vai aprender adjetivos, preposições de lugar e tempo, e vocabulário de casa, família e cidade.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_4: (name) => `Olá, ${name}! Vamos para o **Módulo 4: Passado e Histórias**! Aqui você vai aprender o Past Simple, verbos regulares e irregulares, e como contar o que aconteceu no passado.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_5: (name) => `Olá, ${name}! Vamos para o **Módulo 5: Planos e Futuro**! Neste módulo você vai aprender Will e Going to, fazendo previsões e planejando o futuro em inglês.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_6: (name) => `Olá, ${name}! Vamos para o **Módulo 6: Perguntas Poderosas**! Aqui você vai aprender a formular perguntas complexas (Wh- questions) e ter diálogos práticos.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_7: (name) => `Olá, ${name}! Vamos para o **Módulo 7: Experiências de Vida**! Este módulo vai te ensinar o Present Perfect, comparando passado com o presente.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_8: (name) => `Olá, ${name}! Vamos para o **Módulo 8: Conectivos e Frases**! Aqui você vai aprender a juntar ideias, argumentar e expressar opiniões em inglês.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_9: (name) => `Olá, ${name}! Vamos para o **Módulo 9: Situações Reais**! Neste módulo você vai praticar viagens, imigração, emergências e conversas telefônicas.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_10: (name) => `Olá, ${name}! Vamos para o **Módulo 10: Phrasal Verbs**! Aqui você vai aprender o inglês falado na rua, gírias e vocabulário nativo.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_11: (name) => `Olá, ${name}! Vamos para o **Módulo 11: Inglês Profissional**! Neste módulo você vai aprender entrevistas de emprego, reuniões e e-mails corporativos.
+
+[OPÇÃO] Vamos começar!`,
+    modulo_12: (name) => `Olá, ${name}! Vamos para o **Módulo 12: Pronúncia Perfeita**! Este é o último módulo! Aqui você vai aprender connected speech, ritmo, entonação e compreensão de nativos.
+
+[OPÇÃO] Vamos começar!`,
+  };
+
+  const getSessionStorageKey = (session: string, uid: string) => `chat_session_${session}_${uid}`;
+
+  const loadSessionMessages = React.useCallback((session: string, uid: string) => {
+    const storageKey = getSessionStorageKey(session, uid);
+    const stored = localStorage.getItem(storageKey);
+    return stored ? JSON.parse(stored) : [];
+  }, []);
+
+  const saveSessionMessages = React.useCallback((session: string, uid: string, msgs: Message[]) => {
+    const storageKey = getSessionStorageKey(session, uid);
+    localStorage.setItem(storageKey, JSON.stringify(msgs));
+  }, []);
+
+  const sendInitialMessage = React.useCallback((session: string, data: any) => {
+    const messageText = SESSION_MESSAGES[session] 
+      ? SESSION_MESSAGES[session](data.displayName)
+      : SESSION_MESSAGES['nivelamento'](data.displayName);
+    
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      text: messageText,
+      sender: 'ai',
+      timestamp: Date.now(),
     };
-  }, [user, userData?.plan]);
+    return newMessage;
+  }, []);
 
-  const sendInitialMessage = React.useCallback(async (data: any) => {
-    const welcomeText = `Olá, ${data.displayName}! Eu sou o Professor Jato. Vamos começar nossa jornada no inglês? Qual o seu nível atual?
-[OPÇÃO] Sou Iniciante (Quero aprender do zero)
-[OPÇÃO] Sou Intermediário (Já sei um pouco)
-[OPÇÃO] Sou Avançado (Quero focar em fluência)
-[OPÇÃO] Quero fazer um teste de nivelamento`;
-    try {
-      await addDoc(collection(db, 'users', user!.uid, 'chats'), {
-        role: 'model',
-        content: welcomeText,
-        timestamp: Date.now(),
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, `users/${user!.uid}/chats`);
+  useEffect(() => {
+    if (!user) return;
+
+    const selectedSession = localStorage.getItem('selectedSession');
+    if (selectedSession) {
+      setCurrentSession(selectedSession);
+      localStorage.removeItem('selectedSession');
     }
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
 
-    const q = query(collection(db, 'users', user.uid, 'chats'), orderBy('timestamp', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const loadedMessages: Message[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        loadedMessages.push({
-          id: doc.id,
-          text: data.content,
-          sender: data.role === 'model' ? 'ai' : 'user',
-          timestamp: data.timestamp || Date.now(),
-        });
-      });
-      setMessages(loadedMessages);
-      
-      // If no messages, send welcome message
-      if (loadedMessages.length === 0 && userData) {
-        sendInitialMessage(userData);
+    const handleStorageChange = () => {
+      const selectedSession = localStorage.getItem('selectedSession');
+      if (selectedSession) {
+        console.log('[SESSION] Trocando para:', selectedSession);
+        setCurrentSession(selectedSession);
+        setPracticeMode(false);
+        localStorage.removeItem('selectedSession');
       }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/chats`);
-    });
+    };
 
-    return () => unsubscribe();
-  }, [user, userData, sendInitialMessage]);
+    window.addEventListener('storage', handleStorageChange);
+
+    const interval = setInterval(() => {
+      const selectedSession = localStorage.getItem('selectedSession');
+      if (selectedSession) {
+        console.log('[SESSION] Trocando para:', selectedSession);
+        setCurrentSession(selectedSession);
+        setPracticeMode(false);
+        localStorage.removeItem('selectedSession');
+      }
+    }, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !userData || !currentSession) return;
+
+    const loadedMessages = loadSessionMessages(currentSession, user.uid);
+    setMessages(loadedMessages);
+
+    if (loadedMessages.length === 0) {
+      const initialMsg = sendInitialMessage(currentSession, userData);
+      const updatedMessages = [initialMsg];
+      setMessages(updatedMessages);
+      saveSessionMessages(currentSession, user.uid, updatedMessages);
+    }
+  }, [user, userData, currentSession, loadSessionMessages, saveSessionMessages, sendInitialMessage]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -254,53 +251,41 @@ export const ChatSection = () => {
     const userText = textToSend;
     setInputValue('');
     
-    // Save user message
-    try {
-      await addDoc(collection(db, 'users', user.uid, 'chats'), {
-        role: 'user',
-        content: userText,
-        timestamp: Date.now(),
-      });
-      
-      // Update interaction count
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, {
-        interactionsToday: currentInteractions + 1,
-        lastInteractionDate: today
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}/chats`);
-    }
+    const storageKey = getSessionStorageKey(currentSession, user.uid);
+    const stored = localStorage.getItem(storageKey);
+    const currentMessages: Message[] = stored ? JSON.parse(stored) : [];
+    
+    const newUserMessage: Message = {
+      id: Date.now().toString(),
+      text: userText,
+      sender: 'user',
+      timestamp: Date.now(),
+    };
+    currentMessages.push(newUserMessage);
+    localStorage.setItem(storageKey, JSON.stringify(currentMessages));
+    setMessages([...currentMessages]);
 
     setIsTyping(true);
 
     try {
-      // Build history for Gemini
       const history = messages.map(m => ({
         role: m.sender === 'ai' ? 'model' : 'user',
         parts: [{ text: m.text }]
       }));
-
-      // Send history manually if needed, or just send the full context. 
-      // Since ai.chats.create doesn't take history directly in the new SDK easily without multiple calls,
-      // we can just use generateContent with the full history.
       
       const rawContents = [...history, { role: 'user', parts: [{ text: userText }] }];
       const contents: { role: string; parts: { text: string }[] }[] = [];
       
-      // Ensure it starts with user
       if (rawContents.length > 0 && rawContents[0].role === 'model') {
         contents.push({ role: 'user', parts: [{ text: 'Olá' }] });
       }
       
-      // Ensure alternating roles
       for (const msg of rawContents) {
         if (contents.length === 0) {
           contents.push({ role: msg.role, parts: [...msg.parts] });
         } else {
           const lastMsg = contents[contents.length - 1];
           if (lastMsg.role === msg.role) {
-            // Combine parts if same role
             lastMsg.parts.push({ text: '\n\n' });
             lastMsg.parts.push(...msg.parts);
           } else {
@@ -309,50 +294,51 @@ export const ChatSection = () => {
         }
       }
 
-      let systemInstructionWithContext = SYSTEM_PROMPT + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Módulo atual: ${userData?.currentModule || '1.1'}.`;
-      
-      if (moduleAudios.length > 0) {
-        systemInstructionWithContext += `\n\nÁUDIOS DISPONÍVEIS NO BANCO DE DADOS:\nVocê DEVE enviar áudios para o aluno ouvir sempre que for relevante para o aprendizado ou quando o aluno pedir. Para enviar um áudio, use EXATAMENTE a tag [AUDIO:id]. Exemplo: "Ouça esta frase: [AUDIO:123]".\nLista de áudios disponíveis:\n`;
-        moduleAudios.forEach(audio => {
-          systemInstructionWithContext += `- ID: ${audio.id} | Título: ${audio.title} | Transcrição: "${audio.text}"\n`;
-        });
-      }
+      const practiceModeContext = practiceMode ? "\nMODO PRÁTICA ATIVO: O aluno quer praticar inglês. Use 80% inglês e 20% português. Responda confirmando que o modo prática foi ativado de forma entusiasmada!" : "";
+      const sessionName = currentSession === 'nivelamento' ? 'Teste de Nivelamento' : currentSession.replace('modulo_', 'Módulo ');
+      const systemInstructionWithContext = SYSTEM_PROMPT + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Sessão atual: ${sessionName}. IMPORTANTE: Continue o conteúdo da sessão "${sessionName}" sem voltar ao nivelamento ou outras sessões. O aluno já está neste módulo e quer continuar aprendendo.` + practiceModeContext;
 
-      if (moduleVideos.length > 0) {
-        systemInstructionWithContext += `\n\nVÍDEOS DO YOUTUBE DISPONÍVEIS:\nVocê DEVE recomendar trechos de vídeos do YouTube para complementar suas explicações sempre que o assunto do vídeo for relevante para a dúvida do aluno. Para enviar um vídeo, use EXATAMENTE a tag [VIDEO:id]. Exemplo: "Veja este trecho de vídeo para entender melhor: [VIDEO:123]".\nLista de vídeos disponíveis:\n`;
-        moduleVideos.forEach(video => {
-          systemInstructionWithContext += `- ID: ${video.id} | Título: ${video.title} | Contexto/Assunto: "${video.contextText}"\n`;
-        });
-      }
-
-      const response = await getAI().models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: contents,
-        config: {
-          systemInstruction: systemInstructionWithContext,
-        }
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          config: {
+            systemInstruction: systemInstructionWithContext,
+          },
+          userId: user?.uid,
+        }),
+        cache: 'no-store'
       });
-
-      const aiText = response.text || "Desculpe, não entendi.";
-
-      // Save AI message
-      try {
-        await addDoc(collection(db, 'users', user.uid, 'chats'), {
-          role: 'model',
-          content: aiText,
-          timestamp: Date.now(),
-        });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}/chats`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
       }
+      
+      const data = await response.json();
+      const aiText = data.text;
+
+      const newAiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: aiText,
+        sender: 'ai',
+        timestamp: Date.now(),
+      };
+      const updatedMessages = [...currentMessages, newAiMessage];
+      localStorage.setItem(storageKey, JSON.stringify(updatedMessages));
+      setMessages(updatedMessages);
 
     } catch (error) {
       console.error("Error generating AI response:", error);
-      await addDoc(collection(db, 'users', user.uid, 'chats'), {
-        role: 'model',
-        content: "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.",
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.",
+        sender: 'ai',
         timestamp: Date.now(),
-      });
+      };
+      const errorMessages = [...currentMessages, errorMessage];
+      localStorage.setItem(storageKey, JSON.stringify(errorMessages));
+      setMessages(errorMessages);
     } finally {
       setIsTyping(false);
     }
@@ -365,7 +351,11 @@ export const ChatSection = () => {
         onClose={() => setShowLimitModal(false)}
         title="Limite Atingido"
       >
-        <p className="text-slate-300 mb-6">Você atingiu o limite de 20 interações diárias do plano gratuito. Faça o upgrade para o plano Premium para continuar praticando sem limites!</p>
+        <p className="text-slate-300 mb-6">
+          {userData?.plan === 'premium' 
+            ? 'Você é um assinante Premium! Aproveite todas as vantagens.'
+            : 'Você atingiu o limite de 20 interações diárias do plano gratuito. Faça o upgrade para o plano Premium para continuar praticando sem limites!'}
+        </p>
         <div className="flex justify-end gap-3">
           <button 
             onClick={() => setShowLimitModal(false)}
@@ -373,25 +363,35 @@ export const ChatSection = () => {
           >
             Fechar
           </button>
-          <button 
-            onClick={async () => {
-              try {
-                const res = await fetch('/api/checkout', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: user?.uid || 'guest', email: user?.email || '' })
-                });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-              } catch (e) {
-                console.error(e);
-                alert('Erro ao iniciar checkout.');
-              }
-            }}
-            className="px-4 py-2 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
-          >
-            Assinar Premium
-          </button>
+          {userData?.plan !== 'premium' && (
+            <button 
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user?.uid || 'guest', email: user?.email || '' })
+                  });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                } catch (e) {
+                  console.error(e);
+                  alert('Erro ao iniciar checkout.');
+                }
+              }}
+              className="px-4 py-2 rounded-lg font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+            >
+              Assinar Premium
+            </button>
+          )}
+          {userData?.plan === 'premium' && (
+            <button 
+              disabled
+              className="px-4 py-2 rounded-lg font-medium bg-emerald-600/50 text-white/70 cursor-not-allowed"
+            >
+              EU JÁ SOU PREMIUM
+            </button>
+          )}
         </div>
       </Modal>
 
@@ -418,11 +418,11 @@ export const ChatSection = () => {
 
           {/* Chat Interface */}
           <div className="relative w-full max-w-3xl">
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-indigo-500 rounded-[2.5rem] blur opacity-20"></div>
+            <div className={`absolute -inset-1 ${practiceMode ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-emerald-500 to-indigo-500'} rounded-[2.5rem] blur opacity-20`}></div>
             
-            <div className="relative bg-slate-900 border border-slate-800 rounded-[2rem] shadow-2xl flex flex-col h-[600px] overflow-hidden">
+            <div className={`relative ${practiceMode ? 'bg-slate-900/95 border border-amber-500/30' : 'bg-slate-900 border border-slate-800'} rounded-[2rem] shadow-2xl flex flex-col h-[600px] overflow-hidden`}>
               {/* Chat Header */}
-              <div className="bg-slate-800/50 backdrop-blur-md px-6 py-4 border-b border-slate-700/50 flex items-center justify-between z-10">
+              <div className={`${practiceMode ? 'bg-amber-900/30 border-amber-500/30' : 'bg-slate-800/50 border-slate-700/50'} backdrop-blur-md px-6 py-4 border-b flex items-center justify-between z-10`}>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
@@ -432,37 +432,70 @@ export const ChatSection = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white text-lg">Professor Jato</h3>
-                    <p className="text-emerald-400 text-sm flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      Tutor IA
+                    <p className={`${practiceMode ? 'text-amber-400' : 'text-emerald-400'} text-sm flex items-center gap-1`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${practiceMode ? 'bg-amber-400' : 'bg-emerald-400'} animate-pulse`}></span>
+                      {practiceMode ? (
+                        <span className="font-bold text-amber-400">Modo Prática - 80% English</span>
+                      ) : currentSession === 'nivelamento' ? (
+                        <span className="font-bold text-emerald-400">Teste de Nivelamento</span>
+                      ) : (
+                        <span className="font-bold text-emerald-400">{currentSession.replace('modulo_', 'Módulo ').replace('_', ' ')}</span>
+                      )}
                     </p>
                   </div>
                 </div>
                 {userData && (
-                  <div className="flex items-center gap-4">
-                    <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-2">
-                        {userData.plan === 'premium' ? (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 rounded-full flex items-center gap-1">
-                            <Sparkles className="w-3 h-3" />
-                            Premium
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 text-xs font-medium bg-slate-700 text-slate-300 rounded-full">
-                            Free
-                          </span>
-                        )}
-                        <span className="text-xs text-slate-400 uppercase tracking-wider">Nível: {userData.level}</span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm font-medium text-emerald-400">XP: {userData.xp}</span>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-end">
+                        <div className="flex items-center gap-2">
+                          {userData.plan === 'premium' ? (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 rounded-full flex items-center gap-1">
+                              <Sparkles className="w-3 h-3" />
+                              Premium
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 text-xs font-medium bg-slate-700 text-slate-300 rounded-full">
+                              Free
+                            </span>
+                          )}
+                          {!practiceMode && (
+                            <>
+                              <span className="text-xs text-slate-400 uppercase tracking-wider">Nível: {userData.level}</span>
+                            </>
+                          )}
+                        </div>
                         {userData.plan === 'free' && (
-                          <span className="text-xs text-slate-500">
-                            ({20 - (userData.interactionsToday || 0)}/20)
-                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-slate-500">
+                              ({20 - (userData.interactionsToday || 0)}/20)
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
+                    <button
+                      onClick={() => {
+                        if (!isLimitReached) {
+                          setPracticeMode(!practiceMode);
+                          if (!practiceMode) {
+                            setInputValue('Quero praticar o meu inglês');
+                            setTimeout(() => handleSendMessage(undefined, 'Quero praticar o meu inglês'), 50);
+                          }
+                        } else {
+                          setShowLimitModal(true);
+                        }
+                      }}
+                      disabled={isLimitReached}
+                      className={`px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-all ${
+                        practiceMode 
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-500' 
+                          : 'bg-slate-800 text-slate-300 hover:bg-emerald-600/20 hover:text-emerald-400 border border-slate-700 hover:border-emerald-500/50'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      {practiceMode ? 'Modo Prática Ativo' : 'Quero praticar o meu inglês'}
+                    </button>
                   </div>
                 )}
               </div>
@@ -502,8 +535,15 @@ export const ChatSection = () => {
                                 ? 'bg-slate-800 border border-slate-700 text-slate-200 rounded-tl-sm' 
                                 : 'bg-emerald-600 text-white rounded-tr-sm shadow-md'
                             }`}>
-                              <div className="markdown-body prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-strong:text-emerald-400">
-                                {renderContentWithMedia(parsed.content)}
+<div className="space-y-2">
+                                <Markdown
+                                  remarkPlugins={[remarkGfm]}
+                                  rehypePlugins={[rehypeRaw]}
+                                  components={{
+                                    strong: ({ children }) => <strong className="text-emerald-400 font-bold">{children}</strong>,
+                                    em: ({ children }) => <em className="text-yellow-400">{children}</em>,
+                                  }}
+                                >{parsed.content}</Markdown>
                               </div>
                             </div>
                           </div>
@@ -519,12 +559,15 @@ export const ChatSection = () => {
                                       setShowLimitModal(true);
                                       return;
                                     }
+                                    if (opt === 'Quero praticar o meu inglês') {
+                                      setPracticeMode(true);
+                                    }
                                     setInputValue(opt);
                                     // Small timeout to allow state update before sending
                                     setTimeout(() => handleSendMessage(undefined, opt), 50);
                                   }}
                                   disabled={isLimitReached}
-                                  className="px-4 py-2 bg-slate-800 hover:bg-emerald-600/20 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-400 text-sm rounded-full transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                                  className="px-4 py-2 bg-slate-800 hover:bg-yellow-600/20 border border-slate-700 hover:border-yellow-500/50 text-slate-300 hover:text-yellow-400 text-sm rounded-full transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   {opt}
                                 </button>
