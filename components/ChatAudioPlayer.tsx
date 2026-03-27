@@ -18,6 +18,8 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
+    console.log('[AudioPlayer] Component mounted, audioId:', audioId, 'directUrl:', !!directUrl, 'directData:', !!directData);
+    
     const fetchAudio = async () => {
       if (!audioId) {
         console.log('[AudioPlayer] No audioId provided');
@@ -34,10 +36,12 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
         
         if (response.ok) {
           const data = await response.json();
-          console.log('[AudioPlayer] Got data:', data);
+          console.log('[AudioPlayer] Got data, has audioData:', !!data.audioData);
           if (data.audioData) {
             setAudioUrl(data.audioData);
+            console.log('[AudioPlayer] Audio URL set, length:', data.audioData.length);
           } else {
+            console.log('[AudioPlayer] No audioData in response');
             setHasError(true);
           }
         } else {
@@ -54,6 +58,7 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
     };
 
     if (directUrl || directData) {
+      console.log('[AudioPlayer] Using direct URL/data');
       setAudioUrl(directUrl || directData || null);
       setLoading(false);
     } else if (audioId) {
@@ -65,16 +70,17 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
   }, [audioId, directUrl, directData]);
 
   useEffect(() => {
+    console.log('[AudioPlayer] audioUrl changed:', !!audioUrl);
     if (audioUrl) {
       try {
+        console.log('[AudioPlayer] Creating Audio element');
         const audio = new Audio(audioUrl);
-        audio.onended = () => setIsPlaying(false);
-        audio.onerror = () => {
-          setHasError(true);
-          setAudioUrl(null);
-        };
+        audio.onended = () => { console.log('[AudioPlayer] Audio ended'); setIsPlaying(false); };
+        audio.onerror = (e) => { console.log('[AudioPlayer] Audio error:', e); setHasError(true); setAudioUrl(null); };
+        audio.oncanplay = () => console.log('[AudioPlayer] Audio can play');
         setAudioElement(audio);
-      } catch {
+      } catch (err) {
+        console.log('[AudioPlayer] Error creating audio:', err);
         setHasError(true);
         setAudioUrl(null);
       }
@@ -103,6 +109,7 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
   };
 
   if (loading) {
+    console.log('[AudioPlayer] Rendering loading state');
     return (
       <div className="flex items-center gap-2 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 w-fit my-2">
         <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
@@ -112,9 +119,15 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
   }
 
   if (hasError || !audioUrl) {
-    console.log('AudioPlayer: erro ou sem URL, audioId:', audioId);
-    return null;
+    console.log('[AudioPlayer] Rendering error state, hasError:', hasError, 'audioUrl:', !!audioUrl);
+    return (
+      <div className="flex items-center gap-2 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30 w-fit my-2">
+        <span className="text-sm text-amber-400">🎵 Áudio ({audioId?.slice(0,8)}...)</span>
+      </div>
+    );
   }
+
+  console.log('[AudioPlayer] Rendering player, isPlaying:', isPlaying);
 
   return (
     <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-xl border border-slate-700 w-fit my-2 shadow-sm">
