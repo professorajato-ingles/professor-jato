@@ -302,6 +302,30 @@ export const ChatSection = () => {
     setIsTyping(true);
 
     try {
+      // Buscar áudios disponíveis do banco
+      let availableAudios: any[] = [];
+      try {
+        const audiosResponse = await fetch('/api/audios?limit=20');
+        if (audiosResponse.ok) {
+          const audiosData = await audiosResponse.json();
+          availableAudios = audiosData.audios || [];
+        }
+      } catch (e) {
+        console.log('Error fetching audios:', e);
+      }
+
+      // Criar contexto com lista de áudios disponíveis
+      let audiosContext = '';
+      if (availableAudios.length > 0) {
+        audiosContext = `\n\nÁUDIOS DISPONÍVEIS NO BANCO DE DADOS:\n`;
+        audiosContext += `Use estes áudios para treinar a escuta do aluno. Para enviar um áudio, use a tag [AUDIO:id].\n`;
+        audiosContext += `Lista de áudios disponíveis:\n`;
+        availableAudios.forEach((audio: any) => {
+          audiosContext += `- ID: ${audio.id} | "${audio.title}" ("${audio.text}")\n`;
+        });
+        audiosContext += `\nUse EXATAMENTE os IDs desta lista. NUNCA invente IDs!\n`;
+      }
+
       const history = messages.map(m => ({
         role: m.sender === 'ai' ? 'model' : 'user',
         parts: [{ text: m.text }]
@@ -330,7 +354,7 @@ export const ChatSection = () => {
 
       const practiceModeContext = practiceMode ? "\nMODO PRÁTICA ATIVO: O aluno quer praticar inglês. Use 80% inglês e 20% português. Responda confirmando que o modo prática foi ativado de forma entusiasmada!" : "";
       const sessionName = currentSession === 'nivelamento' ? 'Teste de Nivelamento' : currentSession.replace('modulo_', 'Módulo ');
-      const systemInstructionWithContext = SYSTEM_PROMPT + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Sessão atual: ${sessionName}. IMPORTANTE: Continue o conteúdo da sessão "${sessionName}" sem voltar ao nivelamento ou outras sessões. O aluno já está neste módulo e quer continuar aprendendo.` + practiceModeContext;
+      const systemInstructionWithContext = SYSTEM_PROMPT + audiosContext + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Sessão atual: ${sessionName}. IMPORTANTE: Continue o conteúdo da sessão "${sessionName}" sem voltar ao nivelamento ou outras sessões. O aluno já está neste módulo e quer continuar aprendendo.` + practiceModeContext;
 
       const response = await fetch('/api/ai', {
         method: 'POST',
