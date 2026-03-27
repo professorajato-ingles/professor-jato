@@ -209,25 +209,38 @@ ESCOLHA DE TEMA (CRÍTICO):
 RECURSOS DE ÁUDIO:
 - IMPORTANTE: Para enviar um áudio, você DEVE usar um ID REAL da lista abaixo.
 - IDs REAIS disponíveis:
-  * 02920a30-54c3-480c-a7d5-c35d31698228 (Transcrição: "What is her name?")
-  * a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97 (Transcrição: "Where is she from?")
-  * 2a24d7b3-6187-4322-b975-189adcf89f1c (Transcrição: "How old is she?")
-  * bfac1295-02d9-4c12-9833-a66ef5e3320c (Transcrição: "What is her job?")
-  * db668d3c-944c-4b68-b537-621b7f0cea9e (Transcrição: "How many brothers and sisters does she have?")
-  * f47bad99-9e09-41f4-8e73-aa723270bc60 (Transcrição: "What are her hobbies?")
-  * a5f1bf48-7963-4429-bda4-fc9e8c5f41e9 (Transcrição: "What is her favorite color?")
+  * 02920a30-54c3-480c-a7d5-c35d31698228 (Título: "Audio 1 What is her name?" | Transcrição: "What is her name?")
+  * a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97 (Título: "Audio 2 Where is she from?" | Transcrição: "Where is she from?")
+  * 2a24d7b3-6187-4322-b975-189adcf89f1c (Título: "Audio 3 3_How old is she?" | Transcrição: "How old is she?")
+  * bfac1295-02d9-4c12-9833-a66ef5e3320c (Título: "4_What is her job?" | Transcrição: "What is her job?")
+  * db668d3c-944c-4b68-b537-621b7f0cea9e (Título: "Audio 5 How many brothers and sisters does she have?" | Transcrição: "How many brothers and sisters does she have?")
+  * f47bad99-9e09-41f4-8e73-aa723270bc60 (Título: "Audio 6 What are her hobbies?" | Transcrição: "What are her hobbies?")
+  * a5f1bf48-7963-4429-bda4-fc9e8c5f41e9 (Título: "Audio 7 What is her favorite color?" | Transcrição: "What is her favorite color?")
 - FLUXO CORRETO AO USAR ÁUDIO:
-  1. Use o ID para reproduzir o áudio: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
-  2. A transcrição É A PERGUNTA do título (ex: "What is her name?")
-  3. Peça ao aluno para responder a pergunta em inglês
-  4. Corrima gentilmente se errar, elogie se acertar
-  5. Exemplo de uso: "Can you answer this question? What is her name?" (Then use [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228])
+  1. Leia o TÍTULO para entender o contexto geral (ex: "Entrevista de emprego", "Diálogo no restaurante")
+  2. Leia a TRANSCRIÇÃO para saber EXATAMENTE o que foi dito no áudio
+  3. Use o ID: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
+  4. Faça perguntas baseadas NA TRANSCRIÇÃO real do áudio
+  5. Exemplo: "Listen to this interview. [AUDIO:uuid] What position is the candidate applying for?"
 - REGRAS IMPORTANTES:
-  - NÃO invente diálogos ou histórias! As transcrições são simples perguntas de prática.
-  - NÃO diga "ouviu o diálogo" se a transcrição é só uma pergunta.
-  - Use os áudios para prática de pronúncia e resposta em inglês.
-- NUNCA use IDs inventados!
+  - O TÍTULO dá o contexto (tema, situação)
+  - A TRANSCRIÇÃO contém o conteúdo exato para fazer perguntas
+  - SEMPRE faça perguntas sobre o conteúdo real da transcrição
+  - NUNCA invente IDs de áudio!
 
 RECURSOS DE VÍDEO:
 - Se não houver vídeos cadastrados, não tente enviar.
+  - Use o ID do vídeo: [VIDEO:uuid-real-do-vídeo]
+  - O sistema retornará o vídeo e a TRANSCRIÇÃO (texto) do contexto
+  - SEMPRE leia o título e a transcrição para entender o conteúdo
+  - Faça perguntas específicas sobre o que está na transcrição
+  - Exemplos de uso:
+    - "Watch this scene from a movie: [VIDEO:12345678-1234-1234-1234-123456789012]"
+    - "Based on the video, what expressions did you notice?"
+- NUNCA use IDs inventados!
+
+RECURSOS DE VÍDEO:
+- IMPORTANTE: Para enviar um vídeo, primeiro você deve verificar se existe algum vídeo cadastrado.
+- Se não houver vídeos cadastrados, não tente enviar.
+- Se houver vídeos, use IDs REAIS da lista.
 `;
