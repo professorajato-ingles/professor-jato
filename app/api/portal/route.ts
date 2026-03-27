@@ -8,6 +8,22 @@ const supabase = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+async function findStripeCustomer(stripeSecretKey: string, email: string): Promise<string | null> {
+  const response = await fetch(`https://api.stripe.com/v1/customers?email=${encodeURIComponent(email)}&limit=1`, {
+    headers: {
+      'Authorization': `Bearer ${stripeSecretKey}`,
+    },
+  });
+  
+  const data = await response.json();
+  
+  if (data.data && data.data.length > 0) {
+    return data.data[0].id;
+  }
+  
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await req.json();
@@ -29,11 +45,24 @@ export async function POST(req: NextRequest) {
 
     const { data: user } = await supabase
       .from('users')
-      .select('stripe_customer_id')
+      .select('stripe_customer_id, email')
       .eq('uid', userId)
       .single();
 
-    if (!user?.stripe_customer_id) {
+    let customerId = user?.stripe_customer_id;
+
+    if (!customerId && user?.email) {
+      customerId = await findStripeCustomer(stripeSecretKey, user.email);
+      
+      if (customerId) {
+        await supabase
+          .from('users')
+          .update({ stripe_customer_id: customerId })
+          .eq('uid', userId);
+      }
+    }
+
+    if (!customerId) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 400 });
     }
 
@@ -44,7 +73,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        customer: user.stripe_customer_id,
+        customer: customerId,
         return_url: appUrl,
       }),
     });
