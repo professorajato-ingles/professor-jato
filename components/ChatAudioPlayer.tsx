@@ -8,14 +8,16 @@ interface AudioPlayerProps {
   audioUrl?: string;
   audioData?: string;
   title?: string;
+  transcript?: string;
 }
 
-export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directData, title }: AudioPlayerProps) => {
+export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directData, title, transcript }: AudioPlayerProps) => {
   const [audioUrl, setAudioUrl] = useState<string | null>(directUrl || directData || null);
   const [loading, setLoading] = useState(!directUrl && !directData && !!audioId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [transcriptText, setTranscriptText] = useState<string | null>(transcript || null);
 
   useEffect(() => {
     console.log('[AudioPlayer] Component mounted, audioId:', audioId, 'directUrl:', !!directUrl, 'directData:', !!directData);
@@ -36,9 +38,10 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
         
         if (response.ok) {
           const data = await response.json();
-          console.log('[AudioPlayer] Got data, has audioData:', !!data.audioData);
+          console.log('[AudioPlayer] Got data, has audioData:', !!data.audioData, 'has text:', !!data.text);
           if (data.audioData) {
             setAudioUrl(data.audioData);
+            setTranscriptText(data.text || null);
             console.log('[AudioPlayer] Audio URL set, length:', data.audioData.length);
           } else {
             console.log('[AudioPlayer] No audioData in response');
@@ -130,17 +133,31 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
   console.log('[AudioPlayer] Rendering player, isPlaying:', isPlaying);
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-xl border border-slate-700 w-fit my-2 shadow-sm">
-      <button
-        onClick={togglePlay}
-        className="w-10 h-10 flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-white rounded-full transition-colors shadow-sm"
-      >
-        {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-1" />}
-      </button>
-      <div className="flex flex-col">
-        <span className="text-sm font-medium text-slate-200">{title || 'Áudio da Lição'}</span>
-        <span className="text-xs text-slate-400">{isPlaying ? 'Tocando...' : 'Clique para ouvir'}</span>
+    <div className="bg-slate-800 rounded-xl border border-slate-700 w-fit my-3 shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 p-3">
+        <button
+          onClick={togglePlay}
+          className="w-10 h-10 flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-white rounded-full transition-colors shadow-sm"
+        >
+          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-1" />}
+        </button>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-slate-200">{title || 'Áudio da Lição'}</span>
+          <span className="text-xs text-slate-400">{isPlaying ? 'Tocando...' : 'Clique para ouvir'}</span>
+        </div>
       </div>
+      {transcriptText && (
+        <div className="px-3 pb-3">
+          <details className="group">
+            <summary className="text-xs text-slate-500 cursor-pointer hover:text-emerald-400 flex items-center gap-1">
+              <span>📝 Ver transcrição</span>
+            </summary>
+            <div className="mt-2 p-2 bg-slate-900 rounded-lg text-xs text-slate-300 max-w-md">
+              {transcriptText}
+            </div>
+          </details>
+        </div>
+      )}
     </div>
   );
 };
