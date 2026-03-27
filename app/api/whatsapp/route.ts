@@ -22,7 +22,7 @@ interface WhatsAppMessage {
 
 async function sendWhatsAppMessage(to: string, body: string) {
   console.log('[WHATSAPP] ========== SEND MESSAGE ==========');
-  console.log('[WHATSAPP] To:', to);
+  console.log('[WHATSAPP] To (raw):', to);
   console.log('[WHATSAPP] Body:', body.substring(0, 50) + '...');
   
   if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
@@ -30,11 +30,21 @@ async function sendWhatsAppMessage(to: string, body: string) {
     return null;
   }
 
+  // Para WhatsApp Sandbox, o formato deve ser: whatsapp:+NUMERO
+  const fromNumber = twilioPhoneNumber.startsWith('whatsapp:') 
+    ? twilioPhoneNumber 
+    : `whatsapp:${twilioPhoneNumber}`;
+  
+  const toNumber = to.startsWith('whatsapp:') ? to : `whatsapp:${to.replace('whatsapp:', '')}`;
+  
+  console.log('[WHATSAPP] From:', fromNumber);
+  console.log('[WHATSAPP] To:', toNumber);
+
   const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
   
   const formData = new URLSearchParams();
-  formData.append('From', twilioPhoneNumber);
-  formData.append('To', to);
+  formData.append('From', fromNumber);
+  formData.append('To', toNumber);
   formData.append('Body', body);
 
   console.log('[WHATSAPP] Sending to Twilio API...');
