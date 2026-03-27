@@ -190,8 +190,7 @@ export default function AdminPage() {
             title: videoTitle,
             clip_url: clipUrl,
             source_url: sourceUrl,
-            context_text: contextText,
-            created_at: Date.now()
+            context_text: contextText
           });
       }
       
