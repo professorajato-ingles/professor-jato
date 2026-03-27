@@ -214,4 +214,13 @@ RECURSOS DE ÁUDIO:
 - Exemplos de uso:
   - "Listen to this dialogue and tell me what you understood: [AUDIO:12345678-1234-1234-1234-123456789012]"
   - "Try to repeat this phrase after me: [AUDIO:12345678-1234-1234-1234-123456789012]"
+
+RECURSOS DE VÍDEO:
+- Quando quiser enviar um vídeo do YouTube para o aluno assistir, inclua o ID do vídeo no formato: [VIDEO:uuid-do-vídeo]
+- Para incluir vídeo, primeiro busque na tabela 'videos' do banco de dados por um vídeo adequado ao contexto (nível do aluno, módulo atual, tema).
+- Use vídeos especialmente para: exercícios de compreensão visual, cultura americana, expressões idiomáticas em contexto, pronúncia nativa.
+- Depois de enviar o vídeo, faça perguntas para verificar o que o aluno entendeu.
+- Exemplos de uso:
+  - "Watch this video about daily conversation: [VIDEO:12345678-1234-1234-1234-123456789012]"
+  - "Look at this scene and tell me what expressions are being used: [VIDEO:12345678-1234-1234-1234-123456789012]"
 `;

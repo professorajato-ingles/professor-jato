@@ -9,13 +9,13 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { Modal } from './Modal';
 import { AudioPlayer } from './ChatAudioPlayer';
+import { VideoPlayer } from './ChatVideoPlayer';
 
 interface Message {
   id: string;
   text: string;
   sender: 'ai' | 'user';
   timestamp: number;
-  audioIds?: string[];
 }
 
 interface AudioData {
@@ -25,15 +25,31 @@ interface AudioData {
   audioData: string;
 }
 
+interface VideoData {
+  id: string;
+  title: string;
+  clipUrl: string;
+  sourceUrl: string;
+  contextText: string;
+}
+
 const parseMessage = (text: string) => {
   if (!text) {
-    return { content: '', options: [], audioIds: [] };
+    return { content: '', options: [], audioIds: [], videoIds: [] };
   }
   
   const audioRegex = /\[AUDIO:([a-f0-9-]+)\]/g;
+  const videoRegex = /\[VIDEO:([a-f0-9-]+)\]/g;
   const audioIds: string[] = [];
-  const cleanText = text.replace(audioRegex, (_, audioId) => {
+  const videoIds: string[] = [];
+  
+  let cleanText = text.replace(audioRegex, (_, audioId) => {
     audioIds.push(audioId);
+    return '';
+  });
+  
+  cleanText = cleanText.replace(videoRegex, (_, videoId) => {
+    videoIds.push(videoId);
     return '';
   });
   
@@ -53,7 +69,8 @@ const parseMessage = (text: string) => {
   return {
     content: contentLines.join('\n').trim(),
     options,
-    audioIds
+    audioIds,
+    videoIds
   };
 };
 
@@ -67,6 +84,7 @@ export const ChatSection = () => {
   const [practiceMode, setPracticeMode] = useState(false);
   const [currentSession, setCurrentSession] = useState<string>('nivelamento');
   const [audioDataMap, setAudioDataMap] = useState<Record<string, AudioData>>({});
+  const [videoDataMap, setVideoDataMap] = useState<Record<string, VideoData>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -86,6 +104,23 @@ export const ChatSection = () => {
       }
     }
   }, [audioDataMap]);
+
+  const loadVideoData = useCallback(async (videoIds: string[]) => {
+    const newVideoIds = videoIds.filter(id => !videoDataMap[id]);
+    if (newVideoIds.length === 0) return;
+
+    for (const videoId of newVideoIds) {
+      try {
+        const response = await fetch(`/api/video?id=${videoId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setVideoDataMap(prev => ({ ...prev, [videoId]: data }));
+        }
+      } catch (err) {
+        console.error('Error loading video:', err);
+      }
+    }
+  }, [videoDataMap]);
 
   const SESSION_MESSAGES: Record<string, (name: string) => string> = {
     nivelamento: (name) => `Olá, ${name}! Vamos descobrir qual é o seu nível atual de inglês? Para isso, vou fazer algumas perguntasprogressivas. Não se preocupe, é só um teste inicial para entender melhor onde você está. Vamos começar?
@@ -226,16 +261,23 @@ export const ChatSection = () => {
 
   useEffect(() => {
     const allAudioIds: string[] = [];
+    const allVideoIds: string[] = [];
     messages.forEach(msg => {
       const parsed = parseMessage(msg.text);
       if (parsed.audioIds.length > 0) {
         allAudioIds.push(...parsed.audioIds);
       }
+      if (parsed.videoIds.length > 0) {
+        allVideoIds.push(...parsed.videoIds);
+      }
     });
     if (allAudioIds.length > 0) {
       loadAudioData(allAudioIds);
     }
-  }, [messages, loadAudioData]);
+    if (allVideoIds.length > 0) {
+      loadVideoData(allVideoIds);
+    }
+  }, [messages, loadAudioData, loadVideoData]);
 
   // Setup Speech Recognition
   useEffect(() => {
@@ -601,6 +643,16 @@ export const ChatSection = () => {
                                       key={audioId} 
                                       audioData={audio.audioData} 
                                       title={audio.title}
+                                    />
+                                  );
+                                })}
+                                {parsed.videoIds.map(videoId => {
+                                  const video = videoDataMap[videoId];
+                                  if (!video) return null;
+                                  return (
+                                    <VideoPlayer 
+                                      key={videoId} 
+                                      videoData={video}
                                     />
                                   );
                                 })}
