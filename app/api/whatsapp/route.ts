@@ -20,6 +20,48 @@ interface WhatsAppMessage {
   MessageSid?: string;
 }
 
+async function sendQuickThinkingMessage(to: string) {
+  console.log('[THINKING] Starting sendQuickThinkingMessage to:', to);
+  
+  if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+    console.error('[THINKING] Missing credentials');
+    return null;
+  }
+
+  const fromNumber = twilioPhoneNumber.startsWith('whatsapp:') 
+    ? twilioPhoneNumber 
+    : `whatsapp:${twilioPhoneNumber}`;
+  
+  const toNumber = to.startsWith('whatsapp:') ? to : `whatsapp:${to.replace('whatsapp:', '')}`;
+
+  console.log('[THINKING] fromNumber:', fromNumber, 'toNumber:', toNumber);
+
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+  
+  const formData = new URLSearchParams();
+  formData.append('From', fromNumber);
+  formData.append('To', toNumber);
+  formData.append('Body', '🤔 Pensando...');
+
+  try {
+    console.log('[THINKING] Sending request to Twilio...');
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${twilioAccountSid}:${twilioAuthToken}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+    const result = await response.json();
+    console.log('[THINKING] Response:', result);
+    return result;
+  } catch (error) {
+    console.error('[THINKING] Error:', error);
+    return null;
+  }
+}
+
 async function sendWhatsAppMessage(to: string, body: string) {
   console.log('[WHATSAPP] ========== SEND MESSAGE ==========');
   console.log('[WHATSAPP] To (raw):', to);
@@ -29,6 +71,13 @@ async function sendWhatsAppMessage(to: string, body: string) {
     console.error('[WHATSAPP] Missing Twilio credentials - CANNOT SEND');
     return null;
   }
+
+    // Enviar "Pensando..." para feedback visual
+    const thinkingMsg = await sendQuickThinkingMessage(to);
+    console.log('[WHATSAPP] Thinking message sent:', thinkingMsg);
+    
+    // Aguardar para dar feedback
+    await new Promise(resolve => setTimeout(resolve, 2500));
 
   // Para WhatsApp Sandbox, o formato deve ser: whatsapp:+NUMERO
   const fromNumber = twilioPhoneNumber.startsWith('whatsapp:') 
