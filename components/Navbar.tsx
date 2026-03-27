@@ -53,9 +53,35 @@ export const Navbar = () => {
                 </div>
                 {(userData?.plan === 'premium' || userData?.plan === 'free') && (
                   userData.plan === 'premium' ? (
-                    <span className="text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 px-3 py-1.5 rounded-full">
-                      Premium
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 px-3 py-1.5 rounded-full">
+                        Premium
+                      </span>
+                      <button 
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/portal', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ userId: user.uid })
+                            });
+                            const data = await res.json();
+                            if (data.url) {
+                              window.location.href = data.url;
+                            } else if (data.error) {
+                              alert(data.error);
+                            }
+                          } catch (e) {
+                            console.error(e);
+                            alert('Erro ao acessar portal');
+                          }
+                        }}
+                        className="text-xs text-slate-400 hover:text-slate-600 underline"
+                        title="Gerenciar assinatura"
+                      >
+                        Gestão
+                      </button>
+                    </div>
                   ) : (
                     <button 
                       onClick={async () => {
