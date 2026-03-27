@@ -20,24 +20,33 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
   useEffect(() => {
     const fetchAudio = async () => {
       if (!audioId) {
+        console.log('[AudioPlayer] No audioId provided');
         setHasError(true);
         setLoading(false);
         return;
       }
 
+      console.log('[AudioPlayer] Fetching audio:', audioId);
+
       try {
         const response = await fetch(`/api/audio?id=${audioId}`);
+        console.log('[AudioPlayer] Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('[AudioPlayer] Got data:', data);
           if (data.audioData) {
             setAudioUrl(data.audioData);
           } else {
             setHasError(true);
           }
         } else {
+          const errorData = await response.json();
+          console.log('[AudioPlayer] Error response:', errorData);
           setHasError(true);
         }
-      } catch {
+      } catch (err) {
+        console.log('[AudioPlayer] Catch error:', err);
         setHasError(true);
       } finally {
         setLoading(false);

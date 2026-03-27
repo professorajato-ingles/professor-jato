@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ydhdfhlcznrnvmehmwnj.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'sb_publishable_ImGVTuRrLAAJ0uMNfJx47w_5bwH929s';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -10,17 +13,19 @@ export async function GET(req: NextRequest) {
   const level = searchParams.get('level');
   const limit = searchParams.get('limit') || '10';
 
-  if (!supabaseAdmin) {
-    return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-  }
+  console.log('[API/VIDEO] Request for videoId:', videoId);
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
     if (videoId) {
-      const { data, error } = await supabaseAdmin
+      const { data, error } = await supabase
         .from('videos')
         .select('id, title, clip_url, source_url, context_text, created_at')
         .eq('id', videoId)
         .single();
+
+      console.log('[API/VIDEO] Single query result:', { data, error });
 
       if (error || !data) {
         return NextResponse.json({ error: 'Video not found' }, { status: 404 });
@@ -35,7 +40,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    let query = supabaseAdmin
+    let query = supabase
       .from('videos')
       .select('id, title, clip_url, source_url, context_text')
       .order('created_at', { ascending: false })
@@ -51,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ videos: data || [] });
   } catch (error: any) {
-    console.error('Error fetching video:', error);
+    console.error('[API/VIDEO] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
