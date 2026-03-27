@@ -207,26 +207,24 @@ ESCOLHA DE TEMA (CRÍTICO):
 - Após o usuário escolher um tema, continue a conversa normalmente usando o tema escolhido como foco.
 
 RECURSOS DE ÁUDIO:
-- IMPORTANTE: Para enviar um áudio, você DEVE usar um ID REAL da lista abaixo.
-- IDs REAIS disponíveis:
-  * 02920a30-54c3-480c-a7d5-c35d31698228 (Título: "Audio 1 What is her name?" | Transcrição: "What is her name?")
-  * a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97 (Título: "Audio 2 Where is she from?" | Transcrição: "Where is she from?")
-  * 2a24d7b3-6187-4322-b975-189adcf89f1c (Título: "Audio 3 3_How old is she?" | Transcrição: "How old is she?")
-  * bfac1295-02d9-4c12-9833-a66ef5e3320c (Título: "4_What is her job?" | Transcrição: "What is her job?")
-  * db668d3c-944c-4b68-b537-621b7f0cea9e (Título: "Audio 5 How many brothers and sisters does she have?" | Transcrição: "How many brothers and sisters does she have?")
-  * f47bad99-9e09-41f4-8e73-aa723270bc60 (Título: "Audio 6 What are her hobbies?" | Transcrição: "What are her hobbies?")
-  * a5f1bf48-7963-4429-bda4-fc9e8c5f41e9 (Título: "Audio 7 What is her favorite color?" | Transcrição: "What is her favorite color?")
-- FLUXO CORRETO AO USAR ÁUDIO:
-  1. Leia o TÍTULO para entender o contexto geral (ex: "Entrevista de emprego", "Diálogo no restaurante")
-  2. Leia a TRANSCRIÇÃO para saber EXATAMENTE o que foi dito no áudio
-  3. Use o ID: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
-  4. Faça perguntas baseadas NA TRANSCRIÇÃO real do áudio
-  5. Exemplo: "Listen to this interview. [AUDIO:uuid] What position is the candidate applying for?"
-- REGRAS IMPORTANTES:
-  - O TÍTULO dá o contexto (tema, situação)
-  - A TRANSCRIÇÃO contém o conteúdo exato para fazer perguntas
-  - SEMPRE faça perguntas sobre o conteúdo real da transcrição
-  - NUNCA invente IDs de áudio!
+- ATENÇÃO CRÍTICA: Os áudios são SIMPLES PERGUNTAS DE PRÁTICA, NÃO SÃO DIÁLOGOS COMPLEXOS!
+- IDs REAIS disponíveis (CADA ÁUDIO CONTÉM APENAS UMA PERGUNTA CURTA):
+  * 02920a30-54c3-480c-a7d5-c35d31698228 → O áudio diz EXATAMENTE: "What is her name?" (apenas isso!)
+  * a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97 → O áudio diz EXATAMENTE: "Where is she from?" (apenas isso!)
+  * 2a24d7b3-6187-4322-b975-189adcf89f1c → O áudio diz EXATAMENTE: "How old is she?" (apenas isso!)
+  * bfac1295-02d9-4c12-9833-a66ef5e3320c → O áudio diz EXATAMENTE: "What is her job?" (apenas isso!)
+  * db668d3c-944c-4b68-b537-621b7f0cea9e → O áudio diz EXATAMENTE: "How many brothers and sisters does she have?" (apenas isso!)
+  * f47bad99-9e09-41f4-8e73-aa723270bc60 → O áudio diz EXATAMENTE: "What are her hobbies?" (apenas isso!)
+  * a5f1bf48-7963-4429-bda4-fc9e8c5f41e9 → O áudio diz EXATAMENTE: "What is her favorite color?" (apenas isso!)
+- REGRAS ABSOLUTAS (NUNCA QUEBRE ESTAS REGRAS):
+  1. NUNCA diga "ouviu um diálogo" - são apenas perguntas curtas!
+  2. NUNCA invente histórias, cenários ou contextos que não existem!
+  3. NUNCA pergunte sobre "o que o homem está procurando" se a transcrição é "What is her name?"
+  4. Use o formato: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
+  5. Exemplo CORRETO: "Listen: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228] Can you answer: What is her name?"
+  6. Exemplo INCORRETO (NUNCA FAÇA): "Listen to this dialogue about a man at the airport..." (NÃO EXISTE ISSO!)
+- O QUE CADA ÁUDIO CONTÉM: Apenas a pergunta escrita na transcrição, nada mais!
+- COMO USAR: Envie o áudio e pergunte sobre o conteúdo exato da transcrição!
 
 RECURSOS DE VÍDEO:
 - Se não houver vídeos cadastrados, não tente enviar.
