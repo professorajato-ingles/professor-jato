@@ -1,84 +1,123 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { Play, Pause } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, Pause, Loader2 } from 'lucide-react';
 
 interface AudioPlayerProps {
-  audioData: string;
+  audioId?: string;
+  audioUrl?: string;
+  audioData?: string;
   title?: string;
 }
 
-export const AudioPlayer = ({ audioData, title }: AudioPlayerProps) => {
+export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directData, title }: AudioPlayerProps) => {
+  const [audioUrl, setAudioUrl] = useState<string | null>(directUrl || directData || null);
+  const [loading, setLoading] = useState(!directUrl && !directData && !!audioId);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const fetchAudio = async () => {
+      if (!audioId) {
+        setHasError(true);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/audio?id=${audioId}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.audioData) {
+            setAudioUrl(data.audioData);
+          } else {
+            setHasError(true);
+          }
+        } else {
+          setHasError(true);
+        }
+      } catch {
+        setHasError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (directUrl || directData) {
+      setAudioUrl(directUrl || directData || null);
+      setLoading(false);
+    } else if (audioId) {
+      fetchAudio();
+    } else {
+      setHasError(true);
+      setLoading(false);
+    }
+  }, [audioId, directUrl, directData]);
+
+  useEffect(() => {
+    if (audioUrl) {
+      try {
+        const audio = new Audio(audioUrl);
+        audio.onended = () => setIsPlaying(false);
+        audio.onerror = () => {
+          setHasError(true);
+          setAudioUrl(null);
+        };
+        setAudioElement(audio);
+      } catch {
+        setHasError(true);
+        setAudioUrl(null);
+      }
+    }
+  }, [audioUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+      }
+    };
+  }, [audioElement]);
 
   const togglePlay = () => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio(audioData);
-      audioRef.current.addEventListener('timeupdate', () => {
-        const progress = (audioRef.current!.currentTime / audioRef.current!.duration) * 100;
-        setProgress(progress);
-      });
-      audioRef.current.addEventListener('ended', () => {
-        setIsPlaying(false);
-        setProgress(0);
-      });
-    }
-
+    if (!audioElement) return;
+    
     if (isPlaying) {
-      audioRef.current.pause();
+      audioElement.pause();
+      setIsPlaying(false);
     } else {
-      audioRef.current.play();
+      audioElement.play();
+      setIsPlaying(true);
     }
-    setIsPlaying(!isPlaying);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50 w-fit my-2">
+        <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+        <span className="text-sm text-slate-400">Carregando áudio...</span>
+      </div>
+    );
+  }
+
+  if (hasError || !audioUrl) {
+    return null;
+  }
+
   return (
-    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 my-3">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={togglePlay}
-          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-            isPlaying 
-              ? 'bg-emerald-500 hover:bg-emerald-400' 
-              : 'bg-emerald-600 hover:bg-emerald-500'
-          }`}
-        >
-          {isPlaying ? (
-            <Pause className="w-5 h-5 text-white" />
-          ) : (
-            <Play className="w-5 h-5 text-white ml-0.5" />
-          )}
-        </button>
-        
-        <div className="flex-1">
-          {title && (
-            <p className="text-sm font-medium text-white mb-1">{title}</p>
-          )}
-          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-emerald-500 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            {isPlaying ? 'Reproduzindo...' : 'Clique para ouvir'}
-          </p>
-        </div>
+    <div className="flex items-center gap-3 p-3 bg-slate-800 rounded-xl border border-slate-700 w-fit my-2 shadow-sm">
+      <button
+        onClick={togglePlay}
+        className="w-10 h-10 flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-white rounded-full transition-colors shadow-sm"
+      >
+        {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-1" />}
+      </button>
+      <div className="flex flex-col">
+        <span className="text-sm font-medium text-slate-200">{title || 'Áudio da Lição'}</span>
+        <span className="text-xs text-slate-400">{isPlaying ? 'Tocando...' : 'Clique para ouvir'}</span>
       </div>
     </div>
   );
-};
-
-export const parseAudioInMessage = (text: string): { content: string; audioIds: string[] } => {
-  const audioRegex = /\[AUDIO:([^\]]+)\]/g;
-  const audioIds: string[] = [];
-  
-  const content = text.replace(audioRegex, (_, audioId) => {
-    audioIds.push(audioId);
-    return '';
-  });
-
-  return { content: content.trim(), audioIds };
 };

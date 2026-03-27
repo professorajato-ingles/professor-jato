@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Bot, User, Mic } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { SYSTEM_PROMPT } from '@/lib/ai';
@@ -16,21 +16,6 @@ interface Message {
   text: string;
   sender: 'ai' | 'user';
   timestamp: number;
-}
-
-interface AudioData {
-  id: string;
-  title: string;
-  text: string;
-  audioData: string;
-}
-
-interface VideoData {
-  id: string;
-  title: string;
-  clipUrl: string;
-  sourceUrl: string;
-  contextText: string;
 }
 
 const parseMessage = (text: string) => {
@@ -83,44 +68,8 @@ export const ChatSection = () => {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [practiceMode, setPracticeMode] = useState(false);
   const [currentSession, setCurrentSession] = useState<string>('nivelamento');
-  const [audioDataMap, setAudioDataMap] = useState<Record<string, AudioData>>({});
-  const [videoDataMap, setVideoDataMap] = useState<Record<string, VideoData>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-
-  const loadAudioData = useCallback(async (audioIds: string[]) => {
-    const newAudioIds = audioIds.filter(id => !audioDataMap[id]);
-    if (newAudioIds.length === 0) return;
-
-    for (const audioId of newAudioIds) {
-      try {
-        const response = await fetch(`/api/audio?id=${audioId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setAudioDataMap(prev => ({ ...prev, [audioId]: data }));
-        }
-      } catch (err) {
-        console.error('Error loading audio:', err);
-      }
-    }
-  }, [audioDataMap]);
-
-  const loadVideoData = useCallback(async (videoIds: string[]) => {
-    const newVideoIds = videoIds.filter(id => !videoDataMap[id]);
-    if (newVideoIds.length === 0) return;
-
-    for (const videoId of newVideoIds) {
-      try {
-        const response = await fetch(`/api/video?id=${videoId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setVideoDataMap(prev => ({ ...prev, [videoId]: data }));
-        }
-      } catch (err) {
-        console.error('Error loading video:', err);
-      }
-    }
-  }, [videoDataMap]);
 
   const SESSION_MESSAGES: Record<string, (name: string) => string> = {
     nivelamento: (name) => `Olá, ${name}! Vamos descobrir qual é o seu nível atual de inglês? Para isso, vou fazer algumas perguntasprogressivas. Não se preocupe, é só um teste inicial para entender melhor onde você está. Vamos começar?
@@ -271,13 +220,7 @@ export const ChatSection = () => {
         allVideoIds.push(...parsed.videoIds);
       }
     });
-    if (allAudioIds.length > 0) {
-      loadAudioData(allAudioIds);
-    }
-    if (allVideoIds.length > 0) {
-      loadVideoData(allVideoIds);
-    }
-  }, [messages, loadAudioData, loadVideoData]);
+  }, [messages]);
 
   // Setup Speech Recognition
   useEffect(() => {
@@ -635,27 +578,12 @@ export const ChatSection = () => {
                                     em: ({ children }) => <em className="text-yellow-400">{children}</em>,
                                   }}
                                 >{parsed.content}</Markdown>
-                                {parsed.audioIds.map(audioId => {
-                                  const audio = audioDataMap[audioId];
-                                  if (!audio) return null;
-                                  return (
-                                    <AudioPlayer 
-                                      key={audioId} 
-                                      audioData={audio.audioData} 
-                                      title={audio.title}
-                                    />
-                                  );
-                                })}
-                                {parsed.videoIds.map(videoId => {
-                                  const video = videoDataMap[videoId];
-                                  if (!video) return null;
-                                  return (
-                                    <VideoPlayer 
-                                      key={videoId} 
-                                      videoData={video}
-                                    />
-                                  );
-                                })}
+                                {parsed.audioIds.map(audioId => (
+                                  <AudioPlayer key={audioId} audioId={audioId} />
+                                ))}
+                                {parsed.videoIds.map(videoId => (
+                                  <VideoPlayer key={videoId} videoId={videoId} />
+                                ))}
                               </div>
                             </div>
                           </div>
