@@ -171,8 +171,9 @@ export default function AdminPage() {
 
     setIsVideoUploading(true);
     try {
+      let result;
       if (editingVideoId) {
-        await supabase
+        result = await supabase
           .from('videos')
           .update({
             title: videoTitle,
@@ -184,7 +185,7 @@ export default function AdminPage() {
         
         setEditingVideoId(null);
       } else {
-        await supabase
+        result = await supabase
           .from('videos')
           .insert({
             title: videoTitle,
@@ -194,13 +195,21 @@ export default function AdminPage() {
           });
       }
       
+      if (result.error) {
+        console.error('Video upload error:', result.error);
+        alert('Erro ao salvar vídeo: ' + result.error.message);
+        setIsVideoUploading(false);
+        return;
+      }
+      
       setVideoTitle('');
       setClipUrl('');
       setSourceUrl('');
       setContextText('');
       fetchVideos();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading video:', err);
+      alert('Erro ao salvar vídeo: ' + err.message);
     } finally {
       setIsVideoUploading(false);
     }
