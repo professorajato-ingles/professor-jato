@@ -207,20 +207,22 @@ ESCOLHA DE TEMA (CRÍTICO):
 - Após o usuário escolher um tema, continue a conversa normalmente usando o tema escolhido como foco.
 
 RECURSOS DE ÁUDIO:
-- Quando quiser enviar um áudio para o aluno ouvir e praticar, inclua o ID do áudio no formato: [AUDIO:uuid-do-audio]
-- Para incluir áudio, primeiro busque na tabela 'audios' do banco de dados por um áudio adequado ao contexto (nível do aluno, módulo atual, tema).
-- Use áudios especialmente para: exercícios de listening, pronúncia, nivelamento (testar compreensão auditiva), diálogos, expressões idiomáticas.
-- Depois de enviar o áudio, faça perguntas para verificar o que o aluno entendeu.
-- Exemplos de uso:
-  - "Listen to this dialogue and tell me what you understood: [AUDIO:12345678-1234-1234-1234-123456789012]"
-  - "Try to repeat this phrase after me: [AUDIO:12345678-1234-1234-1234-123456789012]"
+- IMPORTANTE: Antes de enviar qualquer áudio, você DEVE primeiro chamar a API para listar os áudios disponíveis: GET /api/audios
+- Depois de ver a lista, escolha um ID real da lista e use: [AUDIO:uuid-real-do-audio]
+- NUNCA invente IDs de áudio - sempre use IDs da lista real do banco de dados.
+- Use áudios especialmente para: exercícios de listening, pronúncia, nivelamento, diálogos.
+- Exemplos de uso correto:
+  1. Chame /api/audios para ver a lista
+  2. Escolha um áudio adequado (ex: do nível do aluno)
+  3. Use o ID real: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
 
 RECURSOS DE VÍDEO:
-- Quando quiser enviar um vídeo do YouTube para o aluno assistir, inclua o ID do vídeo no formato: [VIDEO:uuid-do-vídeo]
-- Para incluir vídeo, primeiro busque na tabela 'videos' do banco de dados por um vídeo adequado ao contexto (nível do aluno, módulo atual, tema).
-- Use vídeos especialmente para: exercícios de compreensão visual, cultura americana, expressões idiomáticas em contexto, pronúncia nativa.
-- Depois de enviar o vídeo, faça perguntas para verificar o que o aluno entendeu.
-- Exemplos de uso:
-  - "Watch this video about daily conversation: [VIDEO:12345678-1234-1234-1234-123456789012]"
-  - "Look at this scene and tell me what expressions are being used: [VIDEO:12345678-1234-1234-1234-123456789012]"
+- IMPORTANTE: Antes de enviar qualquer vídeo, você DEVE primeiro chamar a API para listar os vídeos disponíveis: GET /api/videos
+- Depois de ver a lista, escolha um ID real da lista e use: [VIDEO:uuid-real-do-vídeo]
+- NUNCA invente IDs de vídeo - sempre use IDs da lista real do banco de dados.
+- Use vídeos especialmente para: compreensão visual, cultura americana, expressões idiomáticas.
+- Exemplos de uso correto:
+  1. Chame /api/videos para ver a lista
+  2. Escolha um vídeo adequado
+  3. Use o ID real do banco
 `;

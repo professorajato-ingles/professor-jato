@@ -104,11 +104,7 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
 
   if (hasError || !audioUrl) {
     console.log('AudioPlayer: erro ou sem URL, audioId:', audioId);
-    return (
-      <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-lg border border-red-500/20 w-fit my-2">
-        <span className="text-sm text-red-400">Áudio não encontrado (ID: {audioId})</span>
-      </div>
-    );
+    return null;
   }
 
   return (
