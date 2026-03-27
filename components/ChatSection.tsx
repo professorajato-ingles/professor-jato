@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Bot, User, Mic } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Mic, Headphones } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { SYSTEM_PROMPT } from '@/lib/ai';
 import Markdown from 'react-markdown';
@@ -159,6 +159,8 @@ Vamos começar?
       setCurrentSession(selectedSession);
       if (selectedSession === 'audio') {
         setAudioLessonSession('audio');
+      } else {
+        setAudioLessonSession(null);
       }
       localStorage.removeItem('selectedSession');
     }
@@ -174,6 +176,8 @@ Vamos começar?
         setCurrentSession(selectedSession);
         if (selectedSession === 'audio') {
           setAudioLessonSession('audio');
+        } else {
+          setAudioLessonSession(null);
         }
         setPracticeMode(false);
         localStorage.removeItem('selectedSession');
@@ -189,6 +193,8 @@ Vamos começar?
         setCurrentSession(selectedSession);
         if (selectedSession === 'audio') {
           setAudioLessonSession('audio');
+        } else {
+          setAudioLessonSession(null);
         }
         setPracticeMode(false);
         localStorage.removeItem('selectedSession');
@@ -632,6 +638,23 @@ Vamos começar?
                                 {parsed.videoIds.map(videoId => (
                                   <VideoPlayer key={videoId} videoId={videoId} />
                                 ))}
+                                {isLastAiMessage && parsed.audioIds.length > 0 && !isTyping && (
+                                  <button
+                                    onClick={() => {
+                                      if (isLimitReached) {
+                                        setShowLimitModal(true);
+                                        return;
+                                      }
+                                      setInputValue('Quero uma aula com esse áudio');
+                                      setTimeout(() => handleSendMessage(undefined, 'Quero uma aula com esse áudio'), 50);
+                                    }}
+                                    disabled={isLimitReached}
+                                    className="mt-3 px-4 py-2 bg-violet-600/20 hover:bg-violet-600/40 border border-violet-500/50 text-violet-300 hover:text-violet-200 text-sm rounded-full transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    <Headphones className="w-4 h-4" />
+                                    Quero uma aula com esse áudio
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
