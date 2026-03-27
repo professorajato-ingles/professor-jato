@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css'; // Global styles
 import { AuthProvider } from '@/components/AuthProvider';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { CookieBanner } from '@/components/CookieBanner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,6 +27,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         <ErrorBoundary>
           <AuthProvider>
             {children}
+            <CookieBanner />
           </AuthProvider>
         </ErrorBoundary>
       </body>
