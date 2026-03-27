@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Bot, User, Mic, Headphones } from 'lucide-react';
+import { Send, Sparkles, Bot, User, Mic, Headphones, Maximize2, Minimize2 } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { SYSTEM_PROMPT } from '@/lib/ai';
 import Markdown from 'react-markdown';
@@ -72,6 +72,7 @@ export const ChatSection = () => {
   const [practiceMode, setPracticeMode] = useState(false);
   const [currentSession, setCurrentSession] = useState<string>('nivelamento');
   const [audioLessonSession, setAudioLessonSession] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -528,10 +529,10 @@ Vamos começar?
           </div>
 
           {/* Chat Interface */}
-          <div className="relative w-full max-w-3xl">
-            <div className={`absolute -inset-1 ${practiceMode ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-emerald-500 to-indigo-500'} rounded-[2.5rem] blur opacity-20`}></div>
+          <div className={`relative ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'w-full max-w-3xl'}`}>
+            {!isFullscreen && <div className={`absolute -inset-1 ${practiceMode ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : audioLessonSession ? 'bg-gradient-to-r from-violet-500 to-purple-500' : 'bg-gradient-to-r from-emerald-500 to-indigo-500'} rounded-[2.5rem] blur opacity-20`}></div>}
             
-            <div className={`relative ${practiceMode ? 'bg-slate-900/95 border border-amber-500/30' : audioLessonSession ? 'bg-slate-900/95 border border-violet-500/30' : 'bg-slate-900 border border-slate-800'} rounded-[2rem] shadow-2xl flex flex-col h-[600px] overflow-hidden`}>
+            <div className={`relative ${isFullscreen ? 'h-full' : ''} ${practiceMode ? 'bg-slate-900/95 border border-amber-500/30' : audioLessonSession ? 'bg-slate-900/95 border border-violet-500/30' : 'bg-slate-900 border border-slate-800'} rounded-[2rem] shadow-2xl flex flex-col ${isFullscreen ? 'h-[calc(100vh-2rem)]' : 'h-[600px]'} overflow-hidden`}>
               {/* Chat Header */}
               <div className={`${practiceMode ? 'bg-amber-900/30 border-amber-500/30' : audioLessonSession ? 'bg-violet-900/30 border-violet-500/30' : 'bg-slate-800/50 border-slate-700/50'} backdrop-blur-md px-6 py-4 border-b flex items-center justify-between z-10`}>
                 <div className="flex items-center gap-4">
@@ -557,6 +558,13 @@ Vamos começar?
                     </p>
                   </div>
                 </div>
+                <button
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="p-2 rounded-full hover:bg-slate-700/50 text-slate-400 hover:text-white transition-colors"
+                  title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+                >
+                  {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+                </button>
                 {userData && (
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
