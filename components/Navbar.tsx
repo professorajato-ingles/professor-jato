@@ -54,9 +54,6 @@ export const Navbar = () => {
                 {(userData?.plan === 'premium' || userData?.plan === 'free') && (
                   userData.plan === 'premium' ? (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 px-3 py-1.5 rounded-full">
-                        Premium
-                      </span>
                       <button 
                         onClick={async () => {
                           try {
@@ -76,7 +73,7 @@ export const Navbar = () => {
                             alert('Erro ao acessar portal');
                           }
                         }}
-                        className="text-xs text-slate-400 hover:text-slate-600 underline"
+                        className="text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-400 text-amber-950 px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity"
                         title="Gerenciar assinatura"
                       >
                         Gestão
