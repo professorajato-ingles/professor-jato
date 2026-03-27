@@ -149,7 +149,10 @@ async function saveMessage(sessionId: string, role: 'user' | 'assistant', conten
 
 export async function POST(req: NextRequest) {
   console.log('[WHATSAPP] ========== NEW REQUEST ==========');
-  console.log('[WHATSAPP] Headers:', Object.fromEntries(req.headers.entries()));
+  
+  // Verificar Content-Type
+  const contentType = req.headers.get('content-type') || '';
+  console.log('[WHATSAPP] Content-Type:', contentType);
   
   console.log('[WHATSAPP] ENV Check:');
   console.log('[WHATSAPP] - TWILIO_ACCOUNT_SID:', twilioAccountSid ? 'SET' : 'MISSING');
@@ -158,21 +161,31 @@ export async function POST(req: NextRequest) {
   console.log('[WHATSAPP] - SUPABASE_KEY:', supabaseKey ? 'SET' : 'MISSING');
   
   try {
-    const body = await req.formData();
+    // Ler o body como texto primeiro
+    const rawBody = await req.text();
+    console.log('[WHATSAPP] Raw body:', rawBody);
+    
+    // Parsear manualmente os parâmetros
+    const params = new URLSearchParams(rawBody);
+    const from = params.get('From');
+    const body = params.get('Body');
+    const messageSid = params.get('MessageSid');
+    
     const message: WhatsAppMessage = {
-      From: body.get('From') as string,
-      Body: (body.get('Body') as string)?.trim() || '',
-      MessageSid: body.get('MessageSid') as string,
+      From: from || '',
+      Body: body?.trim() || '',
+      MessageSid: messageSid || undefined,
     };
 
-    console.log('[WHATSAPP] Received message:', message);
+    console.log('[WHATSAPP] Parsed message:', message);
 
     if (!message.From || !message.Body) {
-      console.log('[WHATSAPP] Missing From or Body');
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      console.log('[WHATSAPP] Missing From or Body - returning 400');
+      return NextResponse.json({ error: 'Missing required fields', received: message }, { status: 400 });
     }
 
     const phoneNumber = message.From.replace('whatsapp:', '');
+    console.log('[WHATSAPP] Phone number:', phoneNumber);
     
     const sessionData = await getOrCreateSession(phoneNumber);
     const sessionId = sessionData?.sessionId || 'temp';
