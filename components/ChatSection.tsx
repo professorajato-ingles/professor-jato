@@ -318,12 +318,12 @@ export const ChatSection = () => {
       let audiosContext = '';
       if (availableAudios.length > 0) {
         audiosContext = `\n\nÁUDIOS DISPONÍVEIS NO BANCO DE DADOS:\n`;
-        audiosContext += `Estes são os únicos áudios que você pode usar. Para cada áudio, a transcrição exata está entre parênteses.\n`;
-        audiosContext += `Use a tag [AUDIO:id] para enviar o áudio. DEPOIS, faça uma PERGUNTA ESPECÍFICA sobre o conteúdo da transcrição.\n`;
-        audiosContext += `NUNCA invente histórias ou cenários diferentes da transcrição.\n`;
+        audiosContext += `Estes são os únicos áudios que você pode usar. Cada áudio tem: title (título) e text (transcrição).\n`;
+        audiosContext += `IMPORTANTE: Ao enviar um áudio, pergunte SEMPRE "What did you understand from this audio?"\n`;
+        audiosContext += `NUNCA faça a pergunta do áudio direto (ex: "What is her name?"). Compare a resposta do aluno com a transcrição (text) e corrija se necessário.\n`;
         audiosContext += `Lista de áudios disponíveis:\n`;
         availableAudios.forEach((audio: any) => {
-          audiosContext += `- ID: ${audio.id} | Transcrição: "${audio.text}"\n`;
+          audiosContext += `- ID: ${audio.id} | Título: "${audio.title}" | Transcrição: "${audio.text}"\n`;
         });
       }
 
