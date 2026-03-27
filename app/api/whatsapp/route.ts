@@ -21,8 +21,12 @@ interface WhatsAppMessage {
 }
 
 async function sendWhatsAppMessage(to: string, body: string) {
+  console.log('[WHATSAPP] ========== SEND MESSAGE ==========');
+  console.log('[WHATSAPP] To:', to);
+  console.log('[WHATSAPP] Body:', body.substring(0, 50) + '...');
+  
   if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    console.error('[WHATSAPP] Missing Twilio credentials');
+    console.error('[WHATSAPP] Missing Twilio credentials - CANNOT SEND');
     return null;
   }
 
@@ -33,6 +37,8 @@ async function sendWhatsAppMessage(to: string, body: string) {
   formData.append('To', to);
   formData.append('Body', body);
 
+  console.log('[WHATSAPP] Sending to Twilio API...');
+  
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -42,7 +48,10 @@ async function sendWhatsAppMessage(to: string, body: string) {
     body: formData.toString(),
   });
 
-  return response.json();
+  const result = await response.json();
+  console.log('[WHATSAPP] Twilio Response:', result);
+  
+  return result;
 }
 
 function buildWhatsAppSystemPrompt() {
@@ -139,6 +148,15 @@ async function saveMessage(sessionId: string, role: 'user' | 'assistant', conten
 }
 
 export async function POST(req: NextRequest) {
+  console.log('[WHATSAPP] ========== NEW REQUEST ==========');
+  console.log('[WHATSAPP] Headers:', Object.fromEntries(req.headers.entries()));
+  
+  console.log('[WHATSAPP] ENV Check:');
+  console.log('[WHATSAPP] - TWILIO_ACCOUNT_SID:', twilioAccountSid ? 'SET' : 'MISSING');
+  console.log('[WHATSAPP] - TWILIO_AUTH_TOKEN:', twilioAuthToken ? 'SET' : 'MISSING');
+  console.log('[WHATSAPP] - TWILIO_PHONE_NUMBER:', twilioPhoneNumber ? 'SET' : 'MISSING');
+  console.log('[WHATSAPP] - SUPABASE_KEY:', supabaseKey ? 'SET' : 'MISSING');
+  
   try {
     const body = await req.formData();
     const message: WhatsAppMessage = {
@@ -150,6 +168,7 @@ export async function POST(req: NextRequest) {
     console.log('[WHATSAPP] Received message:', message);
 
     if (!message.From || !message.Body) {
+      console.log('[WHATSAPP] Missing From or Body');
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
