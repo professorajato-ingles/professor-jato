@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth, UserData } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { Trash2, Upload, Play, Pause, Video, Users, Music, ExternalLink, Edit2, UserX, UserCheck, Eraser, Crown, BarChart3, LogIn, Clock } from 'lucide-react';
+import { Trash2, Upload, Play, Pause, Video, Users, Music, ExternalLink, Edit2, UserX, UserCheck, Eraser, Crown, BarChart3, LogIn, Clock, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 
 interface AudioLesson {
@@ -48,9 +48,24 @@ interface UserStats {
   interactions_today: number;
 }
 
+interface RevenueStats {
+  stripe: {
+    activeCount: number;
+    canceledCount: number;
+    canceledThisMonth: number;
+    mrr: number;
+    currency: string;
+  };
+  users: {
+    totalUsers: number;
+    premiumUsers: number;
+    freeUsers: number;
+  };
+}
+
 export default function AdminPage() {
   const { user, userData, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState<'audios' | 'videos' | 'users' | 'stats'>('audios');
+  const [activeTab, setActiveTab] = useState<'audios' | 'videos' | 'users' | 'stats' | 'revenue'>('audios');
   
   const [lessons, setLessons] = useState<AudioLesson[]>([]);
   const [title, setTitle] = useState('');
@@ -77,6 +92,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState<GlobalStats | null>(null);
   const [recentAccess, setRecentAccess] = useState<AccessLog[]>([]);
   const [topUsers, setTopUsers] = useState<UserStats[]>([]);
+  const [revenue, setRevenue] = useState<RevenueStats | null>(null);
+  const [isRevenueLoading, setIsRevenueLoading] = useState(false);
 
   const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; title: string; message: string; onConfirm: () => void } | null>(null);
   const [alertDialog, setAlertDialog] = useState<{ isOpen: boolean; title: string; message: string } | null>(null);
@@ -162,6 +179,23 @@ export default function AdminPage() {
       setTopUsers(usersData || []);
     } catch (err) {
       console.error('Error fetching stats:', err);
+    }
+  };
+
+  const fetchRevenue = async () => {
+    setIsRevenueLoading(true);
+    try {
+      const res = await fetch('/api/admin/revenue');
+      const data = await res.json();
+      if (data.error) {
+        console.error('Error fetching revenue:', data.error);
+      } else {
+        setRevenue(data);
+      }
+    } catch (err) {
+      console.error('Error fetching revenue:', err);
+    } finally {
+      setIsRevenueLoading(false);
     }
   };
 
@@ -523,6 +557,13 @@ export default function AdminPage() {
             <BarChart3 className="w-5 h-5" />
             Estatísticas
           </button>
+          <button 
+            onClick={() => { setActiveTab('revenue'); fetchRevenue(); }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'revenue' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}
+          >
+            <DollarSign className="w-5 h-5" />
+            Receita
+          </button>
         </div>
 
         {activeTab === 'stats' && (
@@ -611,6 +652,124 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'revenue' && (
+          <div className="space-y-6">
+            {isRevenueLoading ? (
+              <div className="text-center py-12 text-slate-400">Carregando dados...</div>
+            ) : revenue ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-emerald-900 to-emerald-800 border border-emerald-700 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <DollarSign className="w-8 h-8 text-emerald-300" />
+                      <span className="text-emerald-200 text-sm">Receita Mensal (MRR)</span>
+                    </div>
+                    <p className="text-4xl font-bold text-white">
+                      R$ {revenue.stripe.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                  
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Crown className="w-8 h-8 text-amber-400" />
+                      <span className="text-slate-400 text-sm">Assinantes Ativos</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{revenue.stripe.activeCount}</p>
+                  </div>
+                  
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <TrendingUp className="w-8 h-8 text-emerald-400" />
+                      <span className="text-slate-400 text-sm">Usuários Premium</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{revenue.users.premiumUsers}</p>
+                  </div>
+                  
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <TrendingDown className="w-8 h-8 text-red-400" />
+                      <span className="text-slate-400 text-sm">Cancelados (mês)</span>
+                    </div>
+                    <p className="text-3xl font-bold text-white">{revenue.stripe.canceledThisMonth}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-emerald-400" />
+                      Distribuição de Usuários
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                        <span className="text-slate-300">Total de Usuários</span>
+                        <span className="font-bold text-white">{revenue.users.totalUsers}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                        <span className="text-slate-300">Usuários Premium</span>
+                        <span className="font-bold text-amber-400">{revenue.users.premiumUsers}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                        <span className="text-slate-300">Usuários Free</span>
+                        <span className="font-bold text-slate-400">{revenue.users.freeUsers}</span>
+                      </div>
+                      <div className="mt-4">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-400">Taxa de conversão</span>
+                          <span className="text-emerald-400 font-medium">
+                            {revenue.users.totalUsers > 0 
+                              ? ((revenue.users.premiumUsers / revenue.users.totalUsers) * 100).toFixed(1)
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-800 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-2 rounded-full"
+                            style={{ width: `${revenue.users.totalUsers > 0 ? (revenue.users.premiumUsers / revenue.users.totalUsers) * 100 : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                    <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-blue-400" />
+                      Estatísticas Stripe
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                        <span className="text-slate-300">Assinaturas Ativas</span>
+                        <span className="font-bold text-emerald-400">{revenue.stripe.activeCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                        <span className="text-slate-300">Total Canceladas</span>
+                        <span className="font-bold text-red-400">{revenue.stripe.canceledCount}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-800 rounded-lg">
+                        <span className="text-slate-300">Canceladas este mês</span>
+                        <span className="font-bold text-orange-400">{revenue.stripe.canceledThisMonth}</span>
+                      </div>
+                      <div className="p-3 bg-slate-800 rounded-lg mt-6">
+                        <p className="text-xs text-slate-500 mb-1">Valor por assinante</p>
+                        <p className="text-2xl font-bold text-white">
+                          R$ {revenue.stripe.activeCount > 0 
+                            ? (revenue.stripe.mrr / revenue.stripe.activeCount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                            : '0,00'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-slate-400">
+                Erro ao carregar dados de receita
+              </div>
+            )}
           </div>
         )}
 
