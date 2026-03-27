@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { validateUser } from '@/lib/api-security';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ydhdfhlcznrnvmehmwnj.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -26,10 +27,23 @@ async function findStripeCustomer(stripeSecretKey: string, email: string): Promi
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await req.json();
+    const headerUserId = req.headers.get('x-user-id');
+    const { userId: bodyUserId } = await req.json();
+
+    const userId = headerUserId || bodyUserId;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    }
+
+    const user = await validateUser(userId);
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Invalid or inactive user' }, { status: 401 });
+    }
+
+    if (user.plan !== 'premium') {
+      return NextResponse.json({ error: 'No active subscription found' }, { status: 400 });
     }
 
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
@@ -43,16 +57,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
-    const { data: user } = await supabase
+    const { data: userData } = await supabase
       .from('users')
       .select('stripe_customer_id, email')
       .eq('uid', userId)
       .single();
 
-    let customerId = user?.stripe_customer_id;
+    let customerId = userData?.stripe_customer_id;
 
-    if (!customerId && user?.email) {
-      customerId = await findStripeCustomer(stripeSecretKey, user.email);
+    if (!customerId && userData?.email) {
+      customerId = await findStripeCustomer(stripeSecretKey, userData.email);
       
       if (customerId) {
         await supabase
@@ -81,13 +95,12 @@ export async function POST(req: NextRequest) {
     const session = await response.json();
 
     if (!response.ok) {
-      console.error('[PORTAL] Stripe error:', session);
-      return NextResponse.json({ error: session.error?.message || 'Failed to create portal session' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create portal session' }, { status: 500 });
     }
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('[PORTAL] Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[PORTAL] Error:', error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

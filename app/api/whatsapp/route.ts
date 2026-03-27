@@ -22,10 +22,7 @@ interface WhatsAppMessage {
 }
 
 async function sendQuickThinkingMessage(to: string) {
-  console.log('[THINKING] Starting sendQuickThinkingMessage to:', to);
-  
   if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    console.error('[THINKING] Missing credentials');
     return null;
   }
 
@@ -34,8 +31,6 @@ async function sendQuickThinkingMessage(to: string) {
     : `whatsapp:${twilioPhoneNumber}`;
   
   const toNumber = to.startsWith('whatsapp:') ? to : `whatsapp:${to.replace('whatsapp:', '')}`;
-
-  console.log('[THINKING] fromNumber:', fromNumber, 'toNumber:', toNumber);
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
   
@@ -45,7 +40,6 @@ async function sendQuickThinkingMessage(to: string) {
   formData.append('Body', '🤔 Pensando...');
 
   try {
-    console.log('[THINKING] Sending request to Twilio...');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -54,34 +48,22 @@ async function sendQuickThinkingMessage(to: string) {
       },
       body: formData.toString(),
     });
-    const result = await response.json();
-    console.log('[THINKING] Response:', result);
-    return result;
-  } catch (error) {
-    console.error('[THINKING] Error:', error);
+    return await response.json();
+  } catch {
     return null;
   }
 }
 
 async function sendWhatsAppMessage(to: string, body: string) {
-  console.log('[WHATSAPP] ========== SEND MESSAGE ==========');
-  console.log('[WHATSAPP] To (raw):', to);
-  console.log('[WHATSAPP] Body:', body.substring(0, 50) + '...');
-  
   if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
-    console.error('[WHATSAPP] Missing Twilio credentials - CANNOT SEND');
     return null;
   }
 
-  // Para WhatsApp Sandbox, o formato deve ser: whatsapp:+NUMERO
   const fromNumber = twilioPhoneNumber.startsWith('whatsapp:') 
     ? twilioPhoneNumber 
     : `whatsapp:${twilioPhoneNumber}`;
   
   const toNumber = to.startsWith('whatsapp:') ? to : `whatsapp:${to.replace('whatsapp:', '')}`;
-  
-  console.log('[WHATSAPP] From:', fromNumber);
-  console.log('[WHATSAPP] To:', toNumber);
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
   
@@ -90,21 +72,19 @@ async function sendWhatsAppMessage(to: string, body: string) {
   formData.append('To', toNumber);
   formData.append('Body', body);
 
-  console.log('[WHATSAPP] Sending to Twilio API...');
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Basic ' + Buffer.from(`${twilioAccountSid}:${twilioAuthToken}`).toString('base64'),
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: formData.toString(),
-  });
-
-  const result = await response.json();
-  console.log('[WHATSAPP] Twilio Response:', result);
-  
-  return result;
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Basic ' + Buffer.from(`${twilioAccountSid}:${twilioAuthToken}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+    return await response.json();
+  } catch {
+    return null;
+  }
 }
 
 function buildWhatsAppSystemPrompt() {
@@ -201,24 +181,8 @@ async function saveMessage(sessionId: string, role: 'user' | 'assistant', conten
 }
 
 export async function POST(req: NextRequest) {
-  console.log('[WHATSAPP] ========== NEW REQUEST ==========');
-  
-  // Verificar Content-Type
-  const contentType = req.headers.get('content-type') || '';
-  console.log('[WHATSAPP] Content-Type:', contentType);
-  
-  console.log('[WHATSAPP] ENV Check:');
-  console.log('[WHATSAPP] - TWILIO_ACCOUNT_SID:', twilioAccountSid ? 'SET' : 'MISSING');
-  console.log('[WHATSAPP] - TWILIO_AUTH_TOKEN:', twilioAuthToken ? 'SET' : 'MISSING');
-  console.log('[WHATSAPP] - TWILIO_PHONE_NUMBER:', twilioPhoneNumber ? 'SET' : 'MISSING');
-  console.log('[WHATSAPP] - SUPABASE_KEY:', supabaseKey ? 'SET' : 'MISSING');
-  
   try {
-    // Ler o body como texto primeiro
     const rawBody = await req.text();
-    console.log('[WHATSAPP] Raw body:', rawBody);
-    
-    // Parsear manualmente os parâmetros
     const params = new URLSearchParams(rawBody);
     const from = params.get('From');
     const body = params.get('Body');
@@ -230,17 +194,13 @@ export async function POST(req: NextRequest) {
       MessageSid: messageSid || undefined,
     };
 
-    console.log('[WHATSAPP] Parsed message:', message);
-
     if (!message.From || !message.Body) {
-      console.log('[WHATSAPP] Missing From or Body - returning 400');
-      return NextResponse.json({ error: 'Missing required fields', received: message }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const { success: rateLimited, resetIn } = await checkRateLimit(`whatsapp:${message.From}`);
     
     if (!rateLimited) {
-      console.log('[WHATSAPP] Rate limit exceeded for:', message.From);
       return NextResponse.json({ 
         error: 'Too many requests. Please wait before sending more messages.',
         retryAfter: Math.ceil(resetIn / 1000)
@@ -253,8 +213,6 @@ export async function POST(req: NextRequest) {
     }
 
     const phoneNumber = message.From.replace('whatsapp:', '');
-    console.log('[WHATSAPP] Phone number:', phoneNumber);
-    
     const sessionData = await getOrCreateSession(phoneNumber);
     const sessionId = sessionData?.sessionId || 'temp';
 
@@ -270,9 +228,6 @@ export async function POST(req: NextRequest) {
       { role: 'user' as const, parts: [{ text: message.Body }] }
     ];
 
-    console.log('[WHATSAPP] Sending to AI with history length:', contents.length);
-
-    // Enviar "Pensando..." antes de chamar IA
     await sendQuickThinkingMessage(message.From);
     await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -284,16 +239,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log('[WHATSAPP] AI Response:', aiResponse.substring(0, 100) + '...');
-
     await saveMessage(sessionId, 'assistant', aiResponse);
 
     await sendWhatsAppMessage(message.From, aiResponse);
 
     return new Response('', { status: 200 });
   } catch (error: any) {
-    console.error('[WHATSAPP] Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[WHATSAPP] Error:', error.message);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

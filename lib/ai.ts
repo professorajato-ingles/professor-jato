@@ -25,7 +25,6 @@ function getGeminiInstance(apiKey: string): GoogleGenAI {
 }
 
 async function tryGemini1(params: GenerateContentParams): Promise<string> {
-  console.log('[API] Tentando GEMINI KEY 1...');
   const key1 = process.env.GEMINI_API_KEY_1;
   if (!key1) {
     throw new APIError('GEMINI_API_KEY_1 not configured');
@@ -33,12 +32,10 @@ async function tryGemini1(params: GenerateContentParams): Promise<string> {
   
   const ai = getGeminiInstance(key1);
   const response = await ai.models.generateContent(params);
-  console.log('[API] ✓ Sucesso com GEMINI KEY 1');
   return response.text || "Desculpe, não entendi.";
 }
 
 async function tryGemini2(params: GenerateContentParams): Promise<string> {
-  console.log('[API] Tentando GEMINI KEY 2...');
   const key2 = process.env.GEMINI_API_KEY_2;
   if (!key2) {
     throw new APIError('GEMINI_API_KEY_2 not configured');
@@ -46,12 +43,10 @@ async function tryGemini2(params: GenerateContentParams): Promise<string> {
   
   const ai = getGeminiInstance(key2);
   const response = await ai.models.generateContent(params);
-  console.log('[API] ✓ Sucesso com GEMINI KEY 2');
   return response.text || "Desculpe, não entendi.";
 }
 
 async function tryDeepSeek(contents: { role: string; parts: { text: string }[] }[], systemInstruction: string): Promise<string> {
-  console.log('[API] Tentando DEEPSEEK...');
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
     throw new APIError('DEEPSEEK_API_KEY not configured');
@@ -85,46 +80,32 @@ async function tryDeepSeek(contents: { role: string; parts: { text: string }[] }
   }
 
   const data = await response.json() as { choices?: { message?: { content?: string } }[] };
-  console.log('[API] ✓ Sucesso com DEEPSEEK');
   return data.choices?.[0]?.message?.content || "Desculpe, não entendi.";
 }
 
 export async function generateContentWithFallback(params: GenerateContentParams): Promise<string> {
-  const errors: string[] = [];
-
   try {
-    console.log('[AI] Tentando Gemini API Key 1...');
     return await tryGemini1(params);
   } catch (error: any) {
-    console.warn('[AI] Gemini Key 1 falhou:', error.message || error);
-    errors.push(`Key1: ${error.message || error}`);
-
     if (error.statusCode === 429 || error.message?.includes(' quota') || error.message?.includes('RESOURCE_EXHAUSTED')) {
       try {
-        console.log('[AI] Tentando Gemini API Key 2 (fallback)...');
         return await tryGemini2(params);
       } catch (error2: any) {
-        console.warn('[AI] Gemini Key 2 falhou:', error2.message || error2);
-        errors.push(`Key2: ${error2.message || error2}`);
-
         if (error2.statusCode === 429 || error2.message?.includes(' quota') || error2.message?.includes('RESOURCE_EXHAUSTED')) {
           try {
-            console.log('[AI] Tentando DeepSeek API (último fallback)...');
             return await tryDeepSeek(
               params.contents,
               params.config?.systemInstruction || ''
             );
           } catch (error3: any) {
-            console.error('[AI] DeepSeek também falhou:', error3.message || error3);
-            errors.push(`DeepSeek: ${error3.message || error3}`);
-            throw new APIError(`Todas as APIs falharam: ${errors.join(' | ')}`);
+            throw new APIError('All AI services failed');
           }
         } else {
-          throw new APIError(`Key2 error: ${error2.message || error2}`);
+          throw new APIError('AI service error');
         }
       }
     } else {
-      throw new APIError(`Key1 error: ${error.message || error}`);
+      throw new APIError('AI service error');
     }
   }
 }
