@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Sparkles, Bot, User, Mic } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { SYSTEM_PROMPT } from '@/lib/ai';
@@ -8,19 +8,36 @@ import Markdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { Modal } from './Modal';
+import { AudioPlayer } from './ChatAudioPlayer';
 
 interface Message {
   id: string;
   text: string;
   sender: 'ai' | 'user';
   timestamp: number;
+  audioIds?: string[];
+}
+
+interface AudioData {
+  id: string;
+  title: string;
+  text: string;
+  audioData: string;
 }
 
 const parseMessage = (text: string) => {
   if (!text) {
-    return { content: '', options: [] };
+    return { content: '', options: [], audioIds: [] };
   }
-  const lines = text.split('\n');
+  
+  const audioRegex = /\[AUDIO:([a-f0-9-]+)\]/g;
+  const audioIds: string[] = [];
+  const cleanText = text.replace(audioRegex, (_, audioId) => {
+    audioIds.push(audioId);
+    return '';
+  });
+  
+  const lines = cleanText.split('\n');
   const options: string[] = [];
   const contentLines: string[] = [];
   
@@ -35,7 +52,8 @@ const parseMessage = (text: string) => {
   
   return {
     content: contentLines.join('\n').trim(),
-    options
+    options,
+    audioIds
   };
 };
 
@@ -48,8 +66,26 @@ export const ChatSection = () => {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [practiceMode, setPracticeMode] = useState(false);
   const [currentSession, setCurrentSession] = useState<string>('nivelamento');
+  const [audioDataMap, setAudioDataMap] = useState<Record<string, AudioData>>({});
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  const loadAudioData = useCallback(async (audioIds: string[]) => {
+    const newAudioIds = audioIds.filter(id => !audioDataMap[id]);
+    if (newAudioIds.length === 0) return;
+
+    for (const audioId of newAudioIds) {
+      try {
+        const response = await fetch(`/api/audio?id=${audioId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAudioDataMap(prev => ({ ...prev, [audioId]: data }));
+        }
+      } catch (err) {
+        console.error('Error loading audio:', err);
+      }
+    }
+  }, [audioDataMap]);
 
   const SESSION_MESSAGES: Record<string, (name: string) => string> = {
     nivelamento: (name) => `Olá, ${name}! Vamos descobrir qual é o seu nível atual de inglês? Para isso, vou fazer algumas perguntasprogressivas. Não se preocupe, é só um teste inicial para entender melhor onde você está. Vamos começar?
@@ -187,6 +223,19 @@ export const ChatSection = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    const allAudioIds: string[] = [];
+    messages.forEach(msg => {
+      const parsed = parseMessage(msg.text);
+      if (parsed.audioIds.length > 0) {
+        allAudioIds.push(...parsed.audioIds);
+      }
+    });
+    if (allAudioIds.length > 0) {
+      loadAudioData(allAudioIds);
+    }
+  }, [messages, loadAudioData]);
 
   // Setup Speech Recognition
   useEffect(() => {
@@ -535,7 +584,7 @@ export const ChatSection = () => {
                                 ? 'bg-slate-800 border border-slate-700 text-slate-200 rounded-tl-sm' 
                                 : 'bg-emerald-600 text-white rounded-tr-sm shadow-md'
                             }`}>
-<div className="space-y-2">
+                              <div className="space-y-2">
                                 <Markdown
                                   remarkPlugins={[remarkGfm]}
                                   rehypePlugins={[rehypeRaw]}
@@ -544,6 +593,17 @@ export const ChatSection = () => {
                                     em: ({ children }) => <em className="text-yellow-400">{children}</em>,
                                   }}
                                 >{parsed.content}</Markdown>
+                                {parsed.audioIds.map(audioId => {
+                                  const audio = audioDataMap[audioId];
+                                  if (!audio) return null;
+                                  return (
+                                    <AudioPlayer 
+                                      key={audioId} 
+                                      audioData={audio.audioData} 
+                                      title={audio.title}
+                                    />
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>

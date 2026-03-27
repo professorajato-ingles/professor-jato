@@ -10,7 +10,6 @@ import { FAQ } from '@/components/FAQ';
 import { ChatSection } from '@/components/ChatSection';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/components/AuthProvider';
-import { AudioLessonsSection } from '@/components/AudioLessonsSection';
 import { motion } from 'motion/react';
 import { BookOpen, CircleCheck, Star, Play, ChevronRight, Briefcase, Globe, Heart, GraduationCap, Type, Zap, CircleHelp, Mic, Link as LinkIcon, X, MessageCircle, Target, BarChart3, Bot, Instagram, Youtube, Linkedin } from 'lucide-react';
 
@@ -231,8 +230,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <AudioLessonsSection />
 
       {/* Method Section */}
       <section id="metodo" className="py-24 bg-white">
