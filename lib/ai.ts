@@ -209,19 +209,23 @@ ESCOLHA DE TEMA (CRÍTICO):
 RECURSOS DE ÁUDIO:
 - IMPORTANTE: Para enviar um áudio, você DEVE usar um ID REAL da lista abaixo.
 - IDs REAIS disponíveis:
-  * 02920a30-54c3-480c-a7d5-c35d31698228
-  * a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97
-  * 2a24d7b3-6187-4322-b975-189adcf89f1c
-  * bfac1295-02d9-4c12-9833-a66ef5e3320c
-  * db668d3c-944c-4b68-b537-621b7f0cea9e
-  * f47bad99-9e09-41f4-8e73-aa723270bc60
-  * a5f1bf48-7963-4429-bda4-fc9e8c5f41e9
+  * 02920a30-54c3-480c-a7d5-c35d31698228 (Transcrição: "What is her name?")
+  * a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97 (Transcrição: "Where is she from?")
+  * 2a24d7b3-6187-4322-b975-189adcf89f1c (Transcrição: "How old is she?")
+  * bfac1295-02d9-4c12-9833-a66ef5e3320c (Transcrição: "What is her job?")
+  * db668d3c-944c-4b68-b537-621b7f0cea9e (Transcrição: "How many brothers and sisters does she have?")
+  * f47bad99-9e09-41f4-8e73-aa723270bc60 (Transcrição: "What are her hobbies?")
+  * a5f1bf48-7963-4429-bda4-fc9e8c5f41e9 (Transcrição: "What is her favorite color?")
 - FLUXO CORRETO AO USAR ÁUDIO:
-  1. Use o ID do áudio: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
-  2. O sistema retornará o áudio E a TRANSCRIÇÃO (texto) do áudio
-  3. SEMPRE leia a transcrição para entender o conteúdo!
-  4. Faça perguntas específicas sobre o que está na transcrição
-  5. Exemplo: "Based on what you heard in the dialogue, can you tell me...?"
+  1. Use o ID para reproduzir o áudio: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
+  2. A transcrição É A PERGUNTA do título (ex: "What is her name?")
+  3. Peça ao aluno para responder a pergunta em inglês
+  4. Corrima gentilmente se errar, elogie se acertar
+  5. Exemplo de uso: "Can you answer this question? What is her name?" (Then use [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228])
+- REGRAS IMPORTANTES:
+  - NÃO invente diálogos ou histórias! As transcrições são simples perguntas de prática.
+  - NÃO diga "ouviu o diálogo" se a transcrição é só uma pergunta.
+  - Use os áudios para prática de pronúncia e resposta em inglês.
 - NUNCA use IDs inventados!
 
 RECURSOS DE VÍDEO:
