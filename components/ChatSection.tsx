@@ -320,6 +320,7 @@ export const ChatSection = () => {
         audiosContext = `\n\nÁUDIOS DISPONÍVEIS NO BANCO DE DADOS:\n`;
         audiosContext += `Estes são os áudios que você pode usar para treinar a escuta do aluno.\n`;
         audiosContext += `Cada áudio tem: title (título) e text (transcrição).\n`;
+        audiosContext += `IMPORTANTE: Ao enviar um áudio, EXPLORE-O COMPLETAMENTE antes de enviar outro! Continue no mesmo áudio com novas perguntas antes de trocar.\n`;
         audiosContext += `Lista de áudios disponíveis:\n`;
         availableAudios.forEach((audio: any) => {
           audiosContext += `- ID: ${audio.id} | Título: "${audio.title}" | Transcrição: "${audio.text}"\n`;
