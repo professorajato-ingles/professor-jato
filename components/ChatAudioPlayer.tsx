@@ -146,18 +146,6 @@ export const AudioPlayer = ({ audioId, audioUrl: directUrl, audioData: directDat
           <span className="text-xs text-slate-400">{isPlaying ? 'Tocando...' : 'Clique para ouvir'}</span>
         </div>
       </div>
-      {transcriptText && (
-        <div className="px-3 pb-3">
-          <details className="group">
-            <summary className="text-xs text-slate-500 cursor-pointer hover:text-emerald-400 flex items-center gap-1">
-              <span>📝 Ver transcrição</span>
-            </summary>
-            <div className="mt-2 p-2 bg-slate-900 rounded-lg text-xs text-slate-300 max-w-md">
-              {transcriptText}
-            </div>
-          </details>
-        </div>
-      )}
     </div>
   );
 };
