@@ -207,22 +207,22 @@ ESCOLHA DE TEMA (CRÍTICO):
 - Após o usuário escolher um tema, continue a conversa normalmente usando o tema escolhido como foco.
 
 RECURSOS DE ÁUDIO:
-- IMPORTANTE: Antes de enviar qualquer áudio, você DEVE primeiro chamar a API para listar os áudios disponíveis: GET /api/audios
-- Depois de ver a lista, escolha um ID real da lista e use: [AUDIO:uuid-real-do-audio]
-- NUNCA invente IDs de áudio - sempre use IDs da lista real do banco de dados.
-- Use áudios especialmente para: exercícios de listening, pronúncia, nivelamento, diálogos.
-- Exemplos de uso correto:
-  1. Chame /api/audios para ver a lista
-  2. Escolha um áudio adequado (ex: do nível do aluno)
-  3. Use o ID real: [AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]
+- IMPORTANTE: Para enviar um áudio, você DEVE usar um ID REAL da lista de áudios que está no banco de dados.
+- IDs REAIS disponíveis (semanas usar um destes):
+  * 02920a30-54c3-480c-a7d5-c35d31698228
+  * a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97
+  * 2a24d7b3-6187-4322-b975-189adcf89f1c
+  * bfac1295-02d9-4c12-9833-a66ef5e3320c
+  * db668d3c-944c-4b68-b537-621b7f0cea9e
+  * f47bad99-9e09-41f4-8e73-aa723270bc60
+  * a5f1bf48-7963-4429-bda4-fc9e8c5f41e9
+- Exemplos CORRETOS de uso:
+  - "[AUDIO:02920a30-54c3-480c-a7d5-c35d31698228]"
+  - "[AUDIO:a2e9ac04-bd6d-430b-84ab-6dff5ce5fc97]"
+- NUNCA use IDs inventados como "12345678-1234-..." ou qualquer ID que não esteja na lista acima!
 
 RECURSOS DE VÍDEO:
-- IMPORTANTE: Antes de enviar qualquer vídeo, você DEVE primeiro chamar a API para listar os vídeos disponíveis: GET /api/videos
-- Depois de ver a lista, escolha um ID real da lista e use: [VIDEO:uuid-real-do-vídeo]
-- NUNCA invente IDs de vídeo - sempre use IDs da lista real do banco de dados.
-- Use vídeos especialmente para: compreensão visual, cultura americana, expressões idiomáticas.
-- Exemplos de uso correto:
-  1. Chame /api/videos para ver a lista
-  2. Escolha um vídeo adequado
-  3. Use o ID real do banco
+- IMPORTANTE: Para enviar um vídeo, primeiro você deve verificar se existe algum vídeo cadastrado.
+- Se não houver vídeos cadastrados, não tente enviar.
+- Se houver vídeos, use IDs REAIS da lista.
 `;
