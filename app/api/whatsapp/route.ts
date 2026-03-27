@@ -72,13 +72,6 @@ async function sendWhatsAppMessage(to: string, body: string) {
     return null;
   }
 
-    // Enviar "Pensando..." para feedback visual
-    const thinkingMsg = await sendQuickThinkingMessage(to);
-    console.log('[WHATSAPP] Thinking message sent:', thinkingMsg);
-    
-    // Aguardar para dar feedback
-    await new Promise(resolve => setTimeout(resolve, 2500));
-
   // Para WhatsApp Sandbox, o formato deve ser: whatsapp:+NUMERO
   const fromNumber = twilioPhoneNumber.startsWith('whatsapp:') 
     ? twilioPhoneNumber 
@@ -262,6 +255,10 @@ export async function POST(req: NextRequest) {
     ];
 
     console.log('[WHATSAPP] Sending to AI with history length:', contents.length);
+
+    // Enviar "Pensando..." antes de chamar IA
+    await sendQuickThinkingMessage(message.From);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     const aiResponse = await generateContentWithFallback({
       model: 'gemini-2.0-flash',
