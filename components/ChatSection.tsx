@@ -340,6 +340,18 @@ Vamos começar?
         console.log('Error fetching audios:', e);
       }
 
+      // Buscar vídeos disponíveis do banco
+      let availableVideos: any[] = [];
+      try {
+        const videosResponse = await fetch('/api/video?limit=10');
+        if (videosResponse.ok) {
+          const videosData = await videosResponse.json();
+          availableVideos = videosData.videos || [];
+        }
+      } catch (e) {
+        console.log('Error fetching videos:', e);
+      }
+
       // Criar contexto com lista de áudios disponíveis
       let audiosContext = '';
       if (availableAudios.length > 0) {
@@ -350,6 +362,19 @@ Vamos começar?
         audiosContext += `Lista de áudios disponíveis:\n`;
         availableAudios.forEach((audio: any) => {
           audiosContext += `- ID: ${audio.id} | Título: "${audio.title}" | Transcrição: "${audio.text}"\n`;
+        });
+      }
+
+      // Criar contexto com lista de vídeos disponíveis
+      let videosContext = '';
+      if (availableVideos.length > 0) {
+        videosContext = `\n\nVÍDEOS DISPONÍVEIS NO BANCO DE DADOS:\n`;
+        videosContext += `Estes são os vídeos que você pode usar para complementar as aulas.\n`;
+        videosContext += `Cada vídeo tem: title (título) e context_text (contexto).\n`;
+        videosContext += `Para enviar um vídeo, use a tag [VIDEO:id].\n`;
+        videosContext += `Lista de vídeos disponíveis:\n`;
+        availableVideos.forEach((video: any) => {
+          videosContext += `- ID: ${video.id} | Título: "${video.title}" | Contexto: "${video.context_text}"\n`;
         });
       }
 
@@ -382,7 +407,7 @@ Vamos começar?
       const practiceModeContext = practiceMode ? "\nMODO PRÁTICA ATIVO: O aluno quer praticar inglês. Use 80% inglês e 20% português. Responda confirmando que o modo prática foi ativado de forma entusiasmada!" : "";
       const audioSessionContext = audioLessonSession ? "\nSESSÃO DE PRÁTICA DE ESCUTA: O aluno quer praticar listening. Envie áudios e faça perguntas sobre o conteúdo. USE OS ÁUDIOS DO BANCO DE DADOS!" : "";
       const sessionName = currentSession === 'nivelamento' ? 'Teste de Nivelamento' : currentSession === 'audio' ? 'Prática de Escuta' : currentSession.replace('modulo_', 'Módulo ');
-      const systemInstructionWithContext = SYSTEM_PROMPT + audiosContext + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Sessão atual: ${sessionName}. IMPORTANTE: Continue o conteúdo da sessão "${sessionName}" sem voltar ao nivelamento ou outras sessões. O aluno já está neste módulo e quer continuar aprendendo.` + practiceModeContext + audioSessionContext;
+      const systemInstructionWithContext = SYSTEM_PROMPT + audiosContext + videosContext + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Sessão atual: ${sessionName}. IMPORTANTE: Continue o conteúdo da sessão "${sessionName}" sem voltar ao nivelamento ou outras sessões. O aluno já está neste módulo e quer continuar aprendendo.` + practiceModeContext + audioSessionContext;
 
       const response = await fetch('/api/ai', {
         method: 'POST',
