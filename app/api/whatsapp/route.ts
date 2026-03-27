@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateContentWithFallback } from '@/lib/ai';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -234,6 +235,21 @@ export async function POST(req: NextRequest) {
     if (!message.From || !message.Body) {
       console.log('[WHATSAPP] Missing From or Body - returning 400');
       return NextResponse.json({ error: 'Missing required fields', received: message }, { status: 400 });
+    }
+
+    const { success: rateLimited, resetIn } = await checkRateLimit(`whatsapp:${message.From}`);
+    
+    if (!rateLimited) {
+      console.log('[WHATSAPP] Rate limit exceeded for:', message.From);
+      return NextResponse.json({ 
+        error: 'Too many requests. Please wait before sending more messages.',
+        retryAfter: Math.ceil(resetIn / 1000)
+      }, { 
+        status: 429,
+        headers: {
+          'Retry-After': Math.ceil(resetIn / 1000).toString()
+        }
+      });
     }
 
     const phoneNumber = message.From.replace('whatsapp:', '');

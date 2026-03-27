@@ -411,7 +411,10 @@ Vamos começar?
 
       const response = await fetch('/api/ai', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': user?.uid || ''
+        },
         body: JSON.stringify({
           contents,
           config: {
