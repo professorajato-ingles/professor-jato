@@ -11,7 +11,36 @@ import { ChatSection } from '@/components/ChatSection';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/components/AuthProvider';
 import { motion } from 'motion/react';
-import { BookOpen, CircleCheck, Star, Play, ChevronRight, Briefcase, Globe, Heart, GraduationCap, Type, Zap, CircleHelp, Mic, Link as LinkIcon, X, MessageCircle, Target, BarChart3, Bot, Instagram, Youtube, Linkedin } from 'lucide-react';
+import { BookOpen, CircleCheck, Star, Play, ChevronRight, Briefcase, Globe, Heart, GraduationCap, Type, Zap, CircleHelp, Mic, Link as LinkIcon, X, MessageCircle, Target, BarChart3, Bot, Instagram, Youtube, Linkedin, Headphones } from 'lucide-react';
+
+const AudioLessonCard = ({ title, description }: { title: string; description: string }) => (
+  <motion.div 
+    whileHover={{ y: -5 }}
+    onClick={() => {
+      localStorage.setItem('selectedSession', 'audio');
+      document.getElementById('chat')?.scrollIntoView({ behavior: 'smooth' });
+    }}
+    className="p-6 rounded-3xl border shadow-sm hover:shadow-xl transition-all group cursor-pointer relative bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200"
+  >
+    <div className="flex justify-between items-start mb-4">
+      <div className="bg-violet-100 p-3 rounded-2xl group-hover:bg-violet-600 transition-colors">
+        <Headphones className="w-6 h-6 text-violet-600 group-hover:text-white transition-colors" />
+      </div>
+      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full bg-violet-100 text-violet-600">
+        Áudio
+      </span>
+    </div>
+    <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{description}</p>
+    <div className="flex items-center justify-between mt-auto pt-4 border-t border-violet-100">
+      <div className="flex items-center gap-1 text-xs font-medium text-slate-400">
+        <Play className="w-3 h-3" />
+        Prática de escuta
+      </div>
+      <ChevronRight className="w-4 h-4 text-violet-600 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+    </div>
+  </motion.div>
+);
 
 const LessonCard = ({ title, level, duration, description, icon: Icon, isRecommended, sessionId }: any) => (
   <motion.div 
@@ -226,6 +255,10 @@ export default function Home() {
               icon={GraduationCap}
               isRecommended={userLevel === 'Avançado'}
               sessionId="modulo_12"
+            />
+            <AudioLessonCard 
+              title="Prática de Escuta" 
+              description="Treine seu ouvido com áudios reais. Ouça e responda em inglês para melhorar sua compreensão."
             />
           </div>
         </div>

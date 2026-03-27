@@ -20,7 +20,7 @@ interface Message {
 
 const parseMessage = (text: string) => {
   if (!text) {
-    return { content: '', options: [], audioIds: [], videoIds: [] };
+    return { content: '', options: [], audioIds: [], videoIds: [], hasAudio: false };
   }
   
   const audioRegex = /\[AUDIO:([a-f0-9-]+)\]/g;
@@ -37,6 +37,8 @@ const parseMessage = (text: string) => {
     videoIds.push(videoId);
     return '';
   });
+
+  const hasAudio = audioIds.length > 0;
   
   const lines = cleanText.split('\n');
   const options: string[] = [];
@@ -55,7 +57,8 @@ const parseMessage = (text: string) => {
     content: contentLines.join('\n').trim(),
     options,
     audioIds,
-    videoIds
+    videoIds,
+    hasAudio
   };
 };
 
@@ -68,6 +71,7 @@ export const ChatSection = () => {
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [practiceMode, setPracticeMode] = useState(false);
   const [currentSession, setCurrentSession] = useState<string>('nivelamento');
+  const [audioLessonSession, setAudioLessonSession] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
@@ -111,6 +115,13 @@ export const ChatSection = () => {
     modulo_12: (name) => `Olá, ${name}! Vamos para o **Módulo 12: Pronúncia Perfeita**! Este é o último módulo! Aqui você vai aprender connected speech, ritmo, entonação e compreensão de nativos.
 
 [OPÇÃO] Vamos começar!`,
+    audio: (name) => `Olá, ${name}! Que bom que você quer praticar com áudio! 🎧
+
+Vou enviar áudios para você ouvir e praticar sua escuta. Você vai responder às perguntas em inglês.
+
+Vamos começar? 
+
+[OPÇÃO] Estou pronto(a)!`,
   };
 
   const getSessionStorageKey = (session: string, uid: string) => `chat_session_${session}_${uid}`;
@@ -146,6 +157,9 @@ export const ChatSection = () => {
     const selectedSession = localStorage.getItem('selectedSession');
     if (selectedSession) {
       setCurrentSession(selectedSession);
+      if (selectedSession === 'audio') {
+        setAudioLessonSession('audio');
+      }
       localStorage.removeItem('selectedSession');
     }
   }, [user]);
@@ -158,6 +172,9 @@ export const ChatSection = () => {
       if (selectedSession) {
         console.log('[SESSION] Trocando para:', selectedSession);
         setCurrentSession(selectedSession);
+        if (selectedSession === 'audio') {
+          setAudioLessonSession('audio');
+        }
         setPracticeMode(false);
         localStorage.removeItem('selectedSession');
       }
@@ -170,6 +187,9 @@ export const ChatSection = () => {
       if (selectedSession) {
         console.log('[SESSION] Trocando para:', selectedSession);
         setCurrentSession(selectedSession);
+        if (selectedSession === 'audio') {
+          setAudioLessonSession('audio');
+        }
         setPracticeMode(false);
         localStorage.removeItem('selectedSession');
       }
@@ -354,8 +374,9 @@ export const ChatSection = () => {
       }
 
       const practiceModeContext = practiceMode ? "\nMODO PRÁTICA ATIVO: O aluno quer praticar inglês. Use 80% inglês e 20% português. Responda confirmando que o modo prática foi ativado de forma entusiasmada!" : "";
-      const sessionName = currentSession === 'nivelamento' ? 'Teste de Nivelamento' : currentSession.replace('modulo_', 'Módulo ');
-      const systemInstructionWithContext = SYSTEM_PROMPT + audiosContext + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Sessão atual: ${sessionName}. IMPORTANTE: Continue o conteúdo da sessão "${sessionName}" sem voltar ao nivelamento ou outras sessões. O aluno já está neste módulo e quer continuar aprendendo.` + practiceModeContext;
+      const audioSessionContext = audioLessonSession ? "\nSESSÃO DE PRÁTICA DE ESCUTA: O aluno quer praticar listening. Envie áudios e faça perguntas sobre o conteúdo. USE OS ÁUDIOS DO BANCO DE DADOS!" : "";
+      const sessionName = currentSession === 'nivelamento' ? 'Teste de Nivelamento' : currentSession === 'audio' ? 'Prática de Escuta' : currentSession.replace('modulo_', 'Módulo ');
+      const systemInstructionWithContext = SYSTEM_PROMPT + audiosContext + `\n\nNome do aluno: ${userData?.displayName || 'Aluno'}. Nível do aluno: ${userData?.level || 'untested'}. Sessão atual: ${sessionName}. IMPORTANTE: Continue o conteúdo da sessão "${sessionName}" sem voltar ao nivelamento ou outras sessões. O aluno já está neste módulo e quer continuar aprendendo.` + practiceModeContext + audioSessionContext;
 
       const response = await fetch('/api/ai', {
         method: 'POST',
@@ -479,9 +500,9 @@ export const ChatSection = () => {
           <div className="relative w-full max-w-3xl">
             <div className={`absolute -inset-1 ${practiceMode ? 'bg-gradient-to-r from-amber-500 to-yellow-400' : 'bg-gradient-to-r from-emerald-500 to-indigo-500'} rounded-[2.5rem] blur opacity-20`}></div>
             
-            <div className={`relative ${practiceMode ? 'bg-slate-900/95 border border-amber-500/30' : 'bg-slate-900 border border-slate-800'} rounded-[2rem] shadow-2xl flex flex-col h-[600px] overflow-hidden`}>
+            <div className={`relative ${practiceMode ? 'bg-slate-900/95 border border-amber-500/30' : audioLessonSession ? 'bg-slate-900/95 border border-violet-500/30' : 'bg-slate-900 border border-slate-800'} rounded-[2rem] shadow-2xl flex flex-col h-[600px] overflow-hidden`}>
               {/* Chat Header */}
-              <div className={`${practiceMode ? 'bg-amber-900/30 border-amber-500/30' : 'bg-slate-800/50 border-slate-700/50'} backdrop-blur-md px-6 py-4 border-b flex items-center justify-between z-10`}>
+              <div className={`${practiceMode ? 'bg-amber-900/30 border-amber-500/30' : audioLessonSession ? 'bg-violet-900/30 border-violet-500/30' : 'bg-slate-800/50 border-slate-700/50'} backdrop-blur-md px-6 py-4 border-b flex items-center justify-between z-10`}>
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
@@ -491,10 +512,12 @@ export const ChatSection = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white text-lg">Professor Jato</h3>
-                    <p className={`${practiceMode ? 'text-amber-400' : 'text-emerald-400'} text-sm flex items-center gap-1`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${practiceMode ? 'bg-amber-400' : 'bg-emerald-400'} animate-pulse`}></span>
+                    <p className={`${practiceMode ? 'text-amber-400' : audioLessonSession ? 'text-violet-400' : 'text-emerald-400'} text-sm flex items-center gap-1`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${practiceMode ? 'bg-amber-400' : audioLessonSession ? 'bg-violet-400' : 'bg-emerald-400'} animate-pulse`}></span>
                       {practiceMode ? (
                         <span className="font-bold text-amber-400">Modo Prática - 80% English</span>
+                      ) : audioLessonSession ? (
+                        <span className="font-bold text-violet-400">Prática de Escuta</span>
                       ) : currentSession === 'nivelamento' ? (
                         <span className="font-bold text-emerald-400">Teste de Nivelamento</span>
                       ) : (
@@ -561,7 +584,7 @@ export const ChatSection = () => {
 
               {/* Chat Messages */}
               <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-900/50">
-                {!user ? (
+                {!userData || (!audioLessonSession && !messages.length) ? (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
                     <Bot className="w-16 h-16 text-slate-600 mb-2" />
                     <h3 className="text-xl font-medium text-slate-300">Faça login para começar</h3>
