@@ -318,12 +318,13 @@ export const ChatSection = () => {
       let audiosContext = '';
       if (availableAudios.length > 0) {
         audiosContext = `\n\nÁUDIOS DISPONÍVEIS NO BANCO DE DADOS:\n`;
-        audiosContext += `Use estes áudios para treinar a escuta do aluno. Para enviar um áudio, use a tag [AUDIO:id].\n`;
+        audiosContext += `Estes são os únicos áudios que você pode usar. Para cada áudio, a transcrição exata está entre parênteses.\n`;
+        audiosContext += `Use a tag [AUDIO:id] para enviar o áudio. DEPOIS, faça uma PERGUNTA ESPECÍFICA sobre o conteúdo da transcrição.\n`;
+        audiosContext += `NUNCA invente histórias ou cenários diferentes da transcrição.\n`;
         audiosContext += `Lista de áudios disponíveis:\n`;
         availableAudios.forEach((audio: any) => {
-          audiosContext += `- ID: ${audio.id} | "${audio.title}" ("${audio.text}")\n`;
+          audiosContext += `- ID: ${audio.id} | Transcrição: "${audio.text}"\n`;
         });
-        audiosContext += `\nUse EXATAMENTE os IDs desta lista. NUNCA invente IDs!\n`;
       }
 
       const history = messages.map(m => ({
